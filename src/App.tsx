@@ -8,7 +8,6 @@ import {
   X, 
   Trophy, 
   Clock, 
-  Sparkles, 
   Flame, 
   Info,
   Sun,
@@ -248,26 +247,23 @@ export default function App() {
 
       {/* Achievement Alert */}
       {showNotification && (
-        <div style={{
+        <div className="glass" style={{
           position: 'fixed',
           top: '24px',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 1000,
-          background: 'rgba(168, 85, 247, 0.95)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 8px 32px rgba(168, 85, 247, 0.4)',
-          borderRadius: '12px',
-          padding: '12px 24px',
-          color: '#ffffff',
-          fontWeight: 600,
+          borderRadius: '4px',
+          padding: '10px 20px',
+          color: 'var(--text-primary)',
+          fontSize: '13px',
+          fontWeight: 500,
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
-          animation: 'float 2s ease-in-out infinite',
+          gap: '10px',
           backdropFilter: 'blur(8px)'
         }}>
-          <Trophy size={20} color="#f59e0b" fill="#f59e0b" />
+          <Trophy size={15} color="var(--text-primary)" />
           <span>{showNotification}</span>
         </div>
       )}
@@ -277,68 +273,55 @@ export default function App() {
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        padding: '16px 40px',
+        padding: '14px 40px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         borderBottom: '1px solid var(--border-color)',
-        marginBottom: '40px'
+        marginBottom: '32px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
-            padding: '8px',
-            borderRadius: '10px',
-            boxShadow: '0 0 15px var(--primary-glow)'
-          }}>
-            <Gamepad2 size={24} color="#060608" />
-          </div>
-          <div>
-            <h1 className="glow-text-purple" style={{ 
-              fontSize: '24px', 
-              letterSpacing: '0.15em', 
-              color: '#fff',
-              background: 'linear-gradient(90deg, #fff, var(--primary))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>LUNORA</h1>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>UNIFIED INDIE GAME PLATFORM</span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Gamepad2 size={20} color="var(--text-primary)" />
+          <h1 style={{ 
+            fontSize: '18px', 
+            letterSpacing: '0.12em', 
+            color: 'var(--text-primary)'
+          }}>LUNORA</h1>
         </div>
 
         {/* Stats and Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Clock size={14} color="var(--secondary)" />
-              <span>在线时长: {formatTime(playTime)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ display: 'flex', gap: '14px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="时长">
+              <Clock size={13} color="var(--text-secondary)" />
+              <span>{formatTime(playTime)}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Flame size={14} color="#ec4899" />
-              <span>启动次数: {playedCount}次</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="启动">
+              <Flame size={13} color="var(--text-secondary)" />
+              <span>{playedCount}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Trophy size={14} color="#f59e0b" />
-              <span>成就: {unlockedAchievements.length}/4</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="成就">
+              <Trophy size={13} color="var(--text-secondary)" />
+              <span>{unlockedAchievements.length}/4</span>
             </div>
           </div>
 
           <button 
             onClick={toggleTheme} 
             className="btn btn-secondary" 
-            style={{ padding: '8px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            title={theme === 'dark' ? '切换至亮色模式' : '切换至暗色模式'}
+            style={{ padding: '6px 10px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            title={theme === 'dark' ? 'Light' : 'Dark'}
           >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
           <button 
             onClick={() => setShowSettings(!showSettings)} 
             className="btn btn-secondary" 
-            style={{ padding: '8px 12px', borderRadius: '8px' }}
-            title="平台设置"
+            style={{ padding: '6px 10px', borderRadius: '4px' }}
+            title="Settings"
           >
-            <Settings size={18} />
+            <Settings size={15} />
           </button>
         </div>
       </header>
@@ -347,81 +330,42 @@ export default function App() {
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px' }}>
         
         {/* Intro Hero Section */}
-        <section className="glass animate-float" style={{
-          padding: '40px',
+        <section className="glass" style={{
+          padding: '24px 32px',
           borderRadius: 'var(--radius-lg)',
-          marginBottom: '50px',
-          background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%)',
-          border: '1px solid rgba(168, 85, 247, 0.15)',
-          position: 'relative',
-          overflow: 'hidden'
+          marginBottom: '32px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
         }}>
-          <div style={{ position: 'relative', zIndex: 2, maxWidth: '720px' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(168, 85, 247, 0.15)',
-              padding: '4px 12px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              color: 'var(--primary)',
-              fontWeight: 600,
-              marginBottom: '16px',
-              border: '1px solid rgba(168, 85, 247, 0.3)'
-            }}>
-              <Sparkles size={12} />
-              <span>新世代独立游戏收纳平台</span>
-            </div>
-            <h2 style={{ fontSize: '36px', marginBottom: '16px', color: '#fff', lineHeight: 1.2 }}>
-              游历于灵界与凡尘，<br />
-              在 <span className="glow-text-cyan" style={{ color: 'var(--secondary)' }}>Lunora</span> 开启独立游戏发现之旅
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '24px', fontSize: '15px' }}>
-              Lunora 汇集了从 2D 精密平台跳跃、沉浸式博物馆叙事解谜、云端观测模拟，到 3D 体素沙盒等多种不同风格的游戏。所有游戏均可通过平台免下载一键畅玩。
+          <div>
+            <h2 style={{ fontSize: '20px', color: 'var(--text-primary)', fontWeight: 600 }}>LUNORA</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13.5px', marginTop: '4px' }}>
+              探索并即刻畅玩精选独立游戏大厅。
             </p>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <a href="#games-lobby" className="btn btn-primary">
-                浏览大厅 <Gamepad2 size={16} />
-              </a>
-              <a href="https://github.com/Lunora-Gather" target="_blank" rel="noreferrer" className="btn btn-secondary">
-                GitHub 组织 <ExternalLink size={16} />
-              </a>
-            </div>
           </div>
-          
-          <div style={{
-            position: 'absolute',
-            right: '-50px',
-            top: '-50px',
-            width: '300px',
-            height: '300px',
-            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%)',
-            filter: 'blur(20px)',
-            pointerEvents: 'none'
-          }}></div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <a href="#games-lobby" className="btn btn-primary" style={{ padding: '6px 12px', borderRadius: '4px' }}>
+              浏览大厅
+            </a>
+            <a href="https://github.com/Lunora-Gather" target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ padding: '6px 12px', borderRadius: '4px' }}>
+              GitHub
+            </a>
+          </div>
         </section>
 
         {/* Games Lobby Grid */}
         <section id="games-lobby">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '28px' }}>
-            <div>
-              <h2 style={{ fontSize: '28px', color: '#fff' }}>全部收录作品</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
-                {isDevMode ? '🔧 开发者模式已激活：将加载本地 Dev 服务地址' : '🌐 线上模式：加载 GitHub Pages 托管资源'}
-              </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '18px', color: 'var(--text-primary)', fontWeight: 600 }}>全部作品</h2>
+              {isDevMode && <span className="dev-badge">DEV</span>}
             </div>
-            
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <span className="glass" style={{
-                padding: '6px 12px',
-                borderRadius: '20px',
-                fontSize: '12px',
-                color: 'var(--text-secondary)'
-              }}>
-                共 {GAMES_DATA.length} 款项目
-              </span>
-            </div>
+            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+              {GAMES_DATA.length} 个项目
+            </span>
           </div>
 
           <div style={{
@@ -434,31 +378,25 @@ export default function App() {
                 key={game.id} 
                 className="glass game-card" 
                 style={{
-                  '--game-accent': game.accentColor,
-                  '--game-accent-glow': `${game.accentColor}25`
-                } as React.CSSProperties}
+                  borderRadius: 'var(--radius-md)',
+                  padding: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  minHeight: '250px'
+                }}
               >
-                {/* Neon accent corner glow */}
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '4px',
-                  height: '100%',
-                  background: game.accentColor
-                }}></div>
-
                 <div>
                   {/* Category and Difficulty */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{
-                      background: `${game.accentColor}15`,
-                      color: game.accentColor,
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '4px 10px',
-                      borderRadius: '12px',
-                      border: `1px solid ${game.accentColor}30`,
+                      background: 'var(--bg-darker)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '10.5px',
+                      fontWeight: 600,
+                      padding: '3px 8px',
+                      borderRadius: '3px',
+                      border: '1px solid var(--border-color)',
                       letterSpacing: '0.02em',
                       textTransform: 'uppercase'
                     }}>
@@ -471,9 +409,9 @@ export default function App() {
                           <span 
                             key={i} 
                             style={{ 
-                              fontSize: '12px', 
-                              color: i < game.difficulty ? game.accentColor : 'var(--text-muted)',
-                              opacity: i < game.difficulty ? 1 : 0.3
+                              fontSize: '11px', 
+                              color: i < game.difficulty ? 'var(--text-primary)' : 'var(--text-muted)',
+                              opacity: i < game.difficulty ? 1 : 0.25
                             }}
                           >
                             ★
@@ -482,13 +420,13 @@ export default function App() {
                       </div>
                     ) : (
                       <span style={{
-                        background: 'rgba(245, 158, 11, 0.15)',
-                        color: 'var(--warning)',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        padding: '4px 10px',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(245, 158, 11, 0.3)'
+                        background: 'var(--bg-darker)',
+                        color: 'var(--text-muted)',
+                        fontSize: '10.5px',
+                        fontWeight: 600,
+                        padding: '3px 8px',
+                        borderRadius: '3px',
+                        border: '1px solid var(--border-color)'
                       }}>
                         开发中
                       </span>
@@ -496,10 +434,10 @@ export default function App() {
                   </div>
 
                   {/* Title */}
-                  <div style={{ marginBottom: '12px' }}>
-                    <h3 style={{ fontSize: '20px', color: '#fff', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <div style={{ marginBottom: '10px' }}>
+                    <h3 style={{ fontSize: '18px', color: 'var(--text-primary)', display: 'flex', alignItems: 'baseline', gap: '6px', fontWeight: 600 }}>
                       {game.chineseTitle}
-                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 400, fontFamily: 'var(--font-sans)' }}>
+                      <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 400, fontFamily: 'var(--font-sans)' }}>
                         {game.title}
                       </span>
                     </h3>
@@ -508,9 +446,9 @@ export default function App() {
                   {/* Description */}
                   <p style={{
                     color: 'var(--text-secondary)',
-                    fontSize: '13.5px',
-                    lineHeight: 1.5,
-                    marginBottom: '20px'
+                    fontSize: '13px',
+                    lineHeight: 1.4,
+                    marginBottom: '16px'
                   }}>
                     {game.description}
                   </p>
@@ -522,19 +460,19 @@ export default function App() {
                   <div style={{
                     display: 'flex',
                     flexWrap: 'wrap',
-                    gap: '6px',
-                    marginBottom: '20px',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-                    paddingTop: '14px'
+                    gap: '4px',
+                    marginBottom: '16px',
+                    borderTop: '1px solid var(--border-color)',
+                    paddingTop: '12px'
                   }}>
                     {game.tech.map(t => (
                       <span key={t} style={{
                         fontSize: '10px',
-                        color: 'var(--text-muted)',
-                        background: 'rgba(255,255,255,0.03)',
+                        color: 'var(--text-secondary)',
+                        background: 'var(--bg-darker)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
-                        border: '1px solid rgba(255, 255, 255, 0.05)'
+                        borderRadius: '3px',
+                        border: '1px solid var(--border-color)'
                       }}>
                         {t}
                       </span>
@@ -545,15 +483,10 @@ export default function App() {
                   {game.status === 'playable' ? (
                     <button 
                       onClick={() => handlePlayGame(game)}
-                      className="btn" 
-                      style={{
-                        width: '100%',
-                        background: `linear-gradient(135deg, ${game.accentColor}ee 0%, ${game.accentColor}aa 100%)`,
-                        color: game.id === 'LionCityWhispers' ? '#0c0c10' : '#fff',
-                        boxShadow: `0 4px 12px ${game.accentColor}25`
-                      }}
+                      className="btn btn-primary" 
+                      style={{ width: '100%', borderRadius: '4px' }}
                     >
-                      一键启动 <Gamepad2 size={16} />
+                      一键启动
                     </button>
                   ) : (
                     <button 
@@ -561,13 +494,14 @@ export default function App() {
                       className="btn" 
                       style={{
                         width: '100%',
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.05)',
+                        background: 'transparent',
+                        border: '1px solid var(--border-color)',
                         color: 'var(--text-muted)',
-                        cursor: 'not-allowed'
+                        cursor: 'not-allowed',
+                        borderRadius: '4px'
                       }}
                     >
-                      敬请期待...
+                      敬请期待
                     </button>
                   )}
                 </div>
@@ -583,48 +517,44 @@ export default function App() {
           position: 'fixed',
           top: 0,
           right: 0,
-          width: '380px',
+          width: '320px',
           height: '100vh',
           zIndex: 500,
-          boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
-          padding: '30px',
+          boxShadow: 'var(--settings-shadow)',
+          padding: '24px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          animation: 'slideIn 0.3s ease-out'
+          animation: 'slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
         }} className="glass">
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-              <h3 style={{ color: '#fff', fontSize: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Settings size={20} color="var(--primary)" /> 平台配置
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ color: 'var(--text-primary)', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                <Settings size={16} /> 设置
               </h3>
               <button 
                 onClick={() => setShowSettings(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
 
             {/* General section */}
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>常规选项</h4>
+            <div style={{ marginBottom: '20px' }}>
               <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.05)',
-                borderRadius: '8px',
-                padding: '16px'
+                background: 'var(--bg-dark)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '4px',
+                padding: '12px 14px'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ fontSize: '14px', color: '#fff', display: 'block' }}>开发者调试模式</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>连接本地开发端口，方便本地连调</span>
-                  </div>
+                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>开发者模式</span>
                   <label style={{
                     position: 'relative',
                     display: 'inline-block',
-                    width: '46px',
-                    height: '24px'
+                    width: '36px',
+                    height: '20px'
                   }}>
                     <input 
                       type="checkbox" 
@@ -636,22 +566,21 @@ export default function App() {
                       position: 'absolute',
                       cursor: 'pointer',
                       top: 0, left: 0, right: 0, bottom: 0,
-                      backgroundColor: isDevMode ? 'var(--primary)' : '#27273a',
-                      transition: '0.3s',
-                      borderRadius: '24px',
-                      boxShadow: isDevMode ? '0 0 10px var(--primary-glow)' : 'none'
+                      backgroundColor: isDevMode ? 'var(--primary)' : 'var(--accent)',
+                      transition: '0.25s',
+                      borderRadius: '20px'
                     }}>
                       <span style={{
                         position: 'absolute',
                         content: '""',
-                        height: '18px',
-                        width: '18px',
+                        height: '14px',
+                        width: '14px',
                         left: '3px',
                         bottom: '3px',
-                        backgroundColor: '#fff',
-                        transition: '0.3s',
+                        backgroundColor: isDevMode ? 'var(--bg-darker)' : 'var(--text-muted)',
+                        transition: '0.25s',
                         borderRadius: '50%',
-                        transform: isDevMode ? 'translateX(22px)' : 'none'
+                        transform: isDevMode ? 'translateX(16px)' : 'none'
                       }}></span>
                     </span>
                   </label>
@@ -662,22 +591,22 @@ export default function App() {
             {/* Ports/URLs configuration */}
             {isDevMode && (
               <div style={{ flex: 1, overflowY: 'auto', maxHeight: '50vh', paddingRight: '4px' }}>
-                <h4 style={{ fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>本地端口端口设置</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h4 style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>本地端口配置</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {GAMES_DATA.filter(g => g.status === 'playable').map(game => (
-                    <div key={game.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{game.chineseTitle} ({game.id})</label>
+                    <div key={game.id} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{game.chineseTitle}</label>
                       <input 
                         type="text" 
                         value={customPorts[game.id]} 
                         onChange={(e) => handlePortChange(game.id, e.target.value)}
                         style={{
-                          background: 'rgba(0,0,0,0.3)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '6px',
-                          color: '#fff',
-                          padding: '6px 10px',
-                          fontSize: '13px',
+                          background: 'var(--bg-dark)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '4px',
+                          color: 'var(--text-primary)',
+                          padding: '4px 8px',
+                          fontSize: '12px',
                           outline: 'none'
                         }}
                       />
@@ -689,16 +618,16 @@ export default function App() {
           </div>
 
           {/* Settings Footer */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px' }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
               fontSize: '11px',
               color: 'var(--text-muted)'
             }}>
-              <Info size={14} />
-              <span>当前连接的 GitHub 组织: Lunora-Gather</span>
+              <Info size={12} />
+              <span>Org: Lunora-Gather</span>
             </div>
           </div>
         </div>
@@ -713,7 +642,7 @@ export default function App() {
           width: '100vw',
           height: '100vh',
           zIndex: 1000,
-          background: 'rgba(6, 6, 8, 0.95)',
+          background: 'var(--bg-darker)',
           display: 'flex',
           flexDirection: 'column',
           animation: 'fadeIn 0.2s ease-out'
@@ -722,22 +651,15 @@ export default function App() {
           <div style={{
             background: 'var(--bg-dark)',
             borderBottom: '1px solid var(--border-color)',
-            padding: '12px 24px',
+            padding: '10px 24px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                background: `${activeGame.accentColor}20`,
-                padding: '6px',
-                borderRadius: '8px',
-                border: `1px solid ${activeGame.accentColor}40`
-              }}>
-                <Gamepad2 size={16} color={activeGame.accentColor} />
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Gamepad2 size={16} color="var(--text-primary)" />
               <div>
-                <h2 style={{ fontSize: '16px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', display: 'flex', alignItems: 'baseline', gap: '6px', fontWeight: 600 }}>
                   {activeGame.chineseTitle}
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>
                     {activeGame.title}
@@ -749,16 +671,8 @@ export default function App() {
             {/* Controller row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               {isDevMode && (
-                <span style={{
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  color: '#ef4444',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(239, 68, 68, 0.3)'
-                }}>
-                  DEV PORT: {getGameUrl(activeGame)}
+                <span className="dev-badge">
+                  DEV: {getGameUrl(activeGame)}
                 </span>
               )}
               
@@ -768,10 +682,10 @@ export default function App() {
                   if (iframe) iframe.src = iframe.src;
                 }}
                 className="btn btn-secondary" 
-                style={{ padding: '6px 12px', borderRadius: '6px', fontSize: '13px' }}
-                title="重新加载游戏"
+                style={{ padding: '6px 10px', borderRadius: '4px', fontSize: '13px' }}
+                title="刷新"
               >
-                <RefreshCw size={14} /> 刷新
+                <RefreshCw size={13} /> 刷新
               </button>
 
               <button 
@@ -786,10 +700,10 @@ export default function App() {
                   }
                 }}
                 className="btn btn-secondary" 
-                style={{ padding: '6px 12px', borderRadius: '6px', fontSize: '13px' }}
-                title="全屏模式"
+                style={{ padding: '6px 10px', borderRadius: '4px', fontSize: '13px' }}
+                title="全屏"
               >
-                <Maximize2 size={14} /> 全屏
+                <Maximize2 size={13} /> 全屏
               </button>
 
               <a 
@@ -797,26 +711,26 @@ export default function App() {
                 target="_blank" 
                 rel="noreferrer"
                 className="btn btn-secondary" 
-                style={{ padding: '6px 12px', borderRadius: '6px', fontSize: '13px' }}
-                title="在新窗口打开"
+                style={{ padding: '6px 10px', borderRadius: '4px', fontSize: '13px' }}
+                title="新窗口"
               >
-                <ExternalLink size={14} /> 新窗口
+                <ExternalLink size={13} /> 新窗口
               </a>
 
-              <div style={{ width: '1px', height: '20px', background: 'var(--border-color)', margin: '0 4px' }}></div>
+              <div style={{ width: '1px', height: '16px', background: 'var(--border-color)', margin: '0 4px' }}></div>
 
               <button 
                 onClick={handleCloseTheater}
-                className="btn btn-primary" 
+                className="btn btn-secondary" 
                 style={{ 
-                  padding: '6px 12px', 
-                  borderRadius: '6px', 
-                  fontSize: '13px', 
-                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                  boxShadow: 'none'
+                  padding: '6px 10px', 
+                  borderRadius: '4px', 
+                  fontSize: '13px',
+                  borderColor: 'var(--text-muted)',
+                  color: 'var(--text-primary)'
                 }}
               >
-                <X size={14} /> 退出大厅
+                <X size={13} /> 退出
               </button>
             </div>
           </div>
@@ -833,11 +747,10 @@ export default function App() {
               justifyContent: 'center'
             }}
           >
-            {/* Elegant glassmorphism loading overlay */}
-            <div className={`iframe-loader ${!isLoadingGame ? 'fade-out' : ''}`}>
-              <div className="spinner"></div>
-              <div className="loader-text">正在穿越信道，接入游戏舱...</div>
-            </div>
+             {/* Elegant glassmorphism loading overlay */}
+             <div className={`iframe-loader ${!isLoadingGame ? 'fade-out' : ''}`}>
+               <div className="spinner"></div>
+             </div>
 
             <iframe 
               id="lunora-game-iframe"
