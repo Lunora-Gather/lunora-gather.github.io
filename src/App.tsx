@@ -2,9 +2,6 @@ import { useState, useEffect } from 'react';
 import { 
   Gamepad2, 
   Settings, 
-  RefreshCw, 
-  Maximize2, 
-  ExternalLink, 
   X, 
   Trophy, 
   Clock, 
@@ -123,7 +120,6 @@ const GAMES_DATA: Game[] = [
 ];
 
 export default function App() {
-  const [activeGame, setActiveGame] = useState<Game | null>(null);
   const [isDevMode, setIsDevMode] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [customPorts, setCustomPorts] = useState<Record<string, string>>({
@@ -143,7 +139,7 @@ export default function App() {
     const savedTheme = localStorage.getItem('lunora_theme');
     return (savedTheme as 'dark' | 'light') || 'dark';
   });
-  const [isLoadingGame, setIsLoadingGame] = useState<boolean>(false);
+
 
   // Apply theme class to document body
   useEffect(() => {
@@ -200,8 +196,6 @@ export default function App() {
   };
 
   const handlePlayGame = (game: Game) => {
-    setActiveGame(game);
-    setIsLoadingGame(true);
     setPlayedCount(prev => {
       const next = prev + 1;
       localStorage.setItem('lunora_played_count', next.toString());
@@ -212,11 +206,8 @@ export default function App() {
       }
       return next;
     });
-  };
-
-  const handleCloseTheater = () => {
-    setActiveGame(null);
-    setIsLoadingGame(false);
+    // Redirect directly to game URL
+    window.location.href = getGameUrl(game);
   };
 
   const getGameUrl = (game: Game) => {
@@ -633,141 +624,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Embedded Theater Mode Iframe Player Overlay */}
-      {activeGame && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: 1000,
-          background: 'var(--bg-darker)',
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'fadeIn 0.2s ease-out'
-        }}>
-          {/* Theater Header controls */}
-          <div style={{
-            background: 'var(--bg-dark)',
-            borderBottom: '1px solid var(--border-color)',
-            padding: '10px 24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Gamepad2 size={16} color="var(--text-primary)" />
-              <div>
-                <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', display: 'flex', alignItems: 'baseline', gap: '6px', fontWeight: 600 }}>
-                  {activeGame.chineseTitle}
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>
-                    {activeGame.title}
-                  </span>
-                </h2>
-              </div>
-            </div>
 
-            {/* Controller row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {isDevMode && (
-                <span className="dev-badge">
-                  DEV: {getGameUrl(activeGame)}
-                </span>
-              )}
-              
-              <button 
-                onClick={() => {
-                  const iframe = document.getElementById('lunora-game-iframe') as HTMLIFrameElement;
-                  if (iframe) iframe.src = iframe.src;
-                }}
-                className="btn btn-secondary" 
-                style={{ padding: '6px 10px', borderRadius: '4px', fontSize: '13px' }}
-                title="刷新"
-              >
-                <RefreshCw size={13} /> 刷新
-              </button>
-
-              <button 
-                onClick={() => {
-                  const iframeContainer = document.getElementById('iframe-container');
-                  if (iframeContainer) {
-                    if (document.fullscreenElement) {
-                      document.exitFullscreen();
-                    } else {
-                      iframeContainer.requestFullscreen();
-                    }
-                  }
-                }}
-                className="btn btn-secondary" 
-                style={{ padding: '6px 10px', borderRadius: '4px', fontSize: '13px' }}
-                title="全屏"
-              >
-                <Maximize2 size={13} /> 全屏
-              </button>
-
-              <a 
-                href={getGameUrl(activeGame)} 
-                target="_blank" 
-                rel="noreferrer"
-                className="btn btn-secondary" 
-                style={{ padding: '6px 10px', borderRadius: '4px', fontSize: '13px' }}
-                title="新窗口"
-              >
-                <ExternalLink size={13} /> 新窗口
-              </a>
-
-              <div style={{ width: '1px', height: '16px', background: 'var(--border-color)', margin: '0 4px' }}></div>
-
-              <button 
-                onClick={handleCloseTheater}
-                className="btn btn-secondary" 
-                style={{ 
-                  padding: '6px 10px', 
-                  borderRadius: '4px', 
-                  fontSize: '13px',
-                  borderColor: 'var(--text-muted)',
-                  color: 'var(--text-primary)'
-                }}
-              >
-                <X size={13} /> 退出
-              </button>
-            </div>
-          </div>
-
-          {/* Iframe Viewport Container */}
-          <div 
-            id="iframe-container" 
-            style={{ 
-              flex: 1, 
-              background: '#000', 
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-             {/* Elegant glassmorphism loading overlay */}
-             <div className={`iframe-loader ${!isLoadingGame ? 'fade-out' : ''}`}>
-               <div className="spinner"></div>
-             </div>
-
-            <iframe 
-              id="lunora-game-iframe"
-              src={getGameUrl(activeGame)}
-              onLoad={() => setIsLoadingGame(false)}
-              style={{
-                width: '100%',
-                height: '100%',
-                border: 'none',
-                background: '#000'
-              }}
-              allow="fullscreen; autoplay; keyboard-map"
-              sandbox="allow-scripts allow-same-origin allow-forms"
-            />
-          </div>
-        </div>
-      )}
 
       {/* Global CSS keyframe styles for React animations */}
       <style>{`
