@@ -10,7 +10,9 @@ import {
   Clock, 
   Sparkles, 
   Flame, 
-  Info
+  Info,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface Game {
@@ -138,6 +140,20 @@ export default function App() {
   const [playedCount, setPlayedCount] = useState<number>(0);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [showNotification, setShowNotification] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const savedTheme = localStorage.getItem('lunora_theme');
+    return (savedTheme as 'dark' | 'light') || 'dark';
+  });
+  const [isLoadingGame, setIsLoadingGame] = useState<boolean>(false);
+
+  // Apply theme class to document body
+  useEffect(() => {
+    if (theme === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+  }, [theme]);
 
   // Play Time Counter
   useEffect(() => {
@@ -176,8 +192,17 @@ export default function App() {
     });
   };
 
+  const toggleTheme = () => {
+    setTheme(prev => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('lunora_theme', next);
+      return next;
+    });
+  };
+
   const handlePlayGame = (game: Game) => {
     setActiveGame(game);
+    setIsLoadingGame(true);
     setPlayedCount(prev => {
       const next = prev + 1;
       localStorage.setItem('lunora_played_count', next.toString());
@@ -192,6 +217,7 @@ export default function App() {
 
   const handleCloseTheater = () => {
     setActiveGame(null);
+    setIsLoadingGame(false);
   };
 
   const getGameUrl = (game: Game) => {
@@ -298,6 +324,15 @@ export default function App() {
           </div>
 
           <button 
+            onClick={toggleTheme} 
+            className="btn btn-secondary" 
+            style={{ padding: '8px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            title={theme === 'dark' ? '切换至亮色模式' : '切换至暗色模式'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
+          <button 
             onClick={() => setShowSettings(!showSettings)} 
             className="btn btn-secondary" 
             style={{ padding: '8px 12px', borderRadius: '8px' }}
@@ -397,29 +432,11 @@ export default function App() {
             {GAMES_DATA.map(game => (
               <div 
                 key={game.id} 
-                className="glass" 
+                className="glass game-card" 
                 style={{
-                  borderRadius: 'var(--radius-md)',
-                  padding: '24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  minHeight: '260px',
-                  transition: 'var(--transition-smooth)',
-                  border: '1px solid var(--border-color)',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = game.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 20px ${game.accentColor}25`;
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.37)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
+                  '--game-accent': game.accentColor,
+                  '--game-accent-glow': `${game.accentColor}25`
+                } as React.CSSProperties}
               >
                 {/* Neon accent corner glow */}
                 <div style={{
@@ -816,9 +833,16 @@ export default function App() {
               justifyContent: 'center'
             }}
           >
+            {/* Elegant glassmorphism loading overlay */}
+            <div className={`iframe-loader ${!isLoadingGame ? 'fade-out' : ''}`}>
+              <div className="spinner"></div>
+              <div className="loader-text">正在穿越信道，接入游戏舱...</div>
+            </div>
+
             <iframe 
               id="lunora-game-iframe"
               src={getGameUrl(activeGame)}
+              onLoad={() => setIsLoadingGame(false)}
               style={{
                 width: '100%',
                 height: '100%',
