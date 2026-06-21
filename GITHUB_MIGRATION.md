@@ -21,7 +21,7 @@
 您需要将现有的扫雷、数独等仓库迁移至 `Lunora-Gather` 组织下。有两种方法：
 
 ### 方法 A：在 GitHub 网页上“转移”已有仓库（推荐，可保留历史提交记录和 Stars）
-1. 在 GitHub 上打开您的个人仓库页面（例如：`https://github.com/wangjiehu/sudoku-game`）。
+1. 在 GitHub 上打开您的个人仓库页面（例如：`https://github.com/Lunora-Gather/sudoku-game`）。
 2. 点击仓库右上角的 **Settings** 选项卡。
 3. 滚动到页面最底部的 **Danger Zone**。
 4. 点击 **Transfer ownership**。
