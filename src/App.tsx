@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Settings,
   X,
@@ -22,6 +22,12 @@ import { CATEGORIES_MAP, LOCALIZED_TEXTS, type Lang, type LocalizedText } from '
 
 type Theme = 'dark' | 'light';
 type AchievementId = 'novice' | 'hardcore' | 'first-step' | 'collector';
+
+interface ZymLogoProps {
+  size?: number;
+  color?: string;
+  className?: string;
+}
 
 const ACHIEVEMENT_IDS: AchievementId[] = ['novice', 'hardcore', 'first-step', 'collector'];
 
@@ -93,7 +99,7 @@ const getAchievementCopy = (id: AchievementId, text: LocalizedText) => {
   }
 };
 
-const ZymLogo = ({ size = 20, color = 'var(--text-primary)', className = '' }) => (
+const ZymLogo = ({ size = 20, color = 'var(--text-primary)', className = '' }: ZymLogoProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}
@@ -483,7 +489,7 @@ export default function App() {
   );
 }
 
-function SettingBlock({ label, children }: { label: string; children: React.ReactNode }) {
+function SettingBlock({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ background: 'var(--bg-dark)', border: '1px solid var(--border-color)', borderRadius: 4, padding: '10px 12px' }}>
