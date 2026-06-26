@@ -197,12 +197,12 @@ const GAMES_DATA: Game[] = [
     tech: ['HTML5', 'CSS3', 'JS ES6', 'Web Audio API'],
     prodUrl: 'https://lunora-gather.github.io/crateveil/',
     devUrl: 'http://localhost:5175',
-    accentColor: '#00ffd5',
+    accentColor: '#14b8a6',
     status: 'playable'
   },
   {
     id: '2048',
-    title: '2048 · Zen Synthesis',
+    title: '2048',
     chineseTitle: '2048',
     category: '经典解谜',
     categoryEn: 'Puzzle',
@@ -212,7 +212,7 @@ const GAMES_DATA: Game[] = [
     tech: ['HTML5', 'CSS3', 'Vanilla JS', 'Web Audio API'],
     prodUrl: 'https://lunora-gather.github.io/2048/',
     devUrl: 'http://localhost:8080',
-    accentColor: '#f8fafc',
+    accentColor: '#a855f7',
     status: 'playable'
   },
   {
