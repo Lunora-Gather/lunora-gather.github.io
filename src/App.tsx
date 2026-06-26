@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import { 
-  Settings, 
-  X, 
-  Trophy, 
-  Clock, 
-  Flame, 
+import { useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
+import {
+  Settings,
+  X,
+  Trophy,
+  Clock,
+  Flame,
   Info,
   Sun,
   Moon,
@@ -12,33 +13,9 @@ import {
   Play
 } from 'lucide-react';
 
-const ZymLogo = ({ size = 20, color = "var(--text-primary)", className = "", style = {} }: { size?: number; color?: string; className?: string; style?: React.CSSProperties }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke={color} 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-    className={className}
-    style={{ display: 'inline-block', verticalAlign: 'middle', ...style }}
-  >
-    {/* Outer ZYM / M clean curved shape (no overlap) */}
-    <path d="M 3.5 20 Q 6 13 8.5 6 Q 10.25 11.5 12 11.5 Q 13.75 11.5 15.5 6 Q 18 13 20.5 20" />
-    
-    {/* Left Eye (dot) */}
-    <circle cx="9" cy="14" r="1.2" fill={color} stroke="none" />
-    
-    {/* Right Eye (dot) */}
-    <circle cx="15" cy="14" r="1.2" fill={color} stroke="none" />
-    
-    {/* Mouth (dash) */}
-    <line x1="10.5" y1="17" x2="13.5" y2="17" />
-  </svg>
-);
+type Lang = 'zh' | 'en';
+type Theme = 'dark' | 'light';
+type AchievementId = 'novice' | 'hardcore' | 'first-step' | 'collector';
 
 interface Game {
   id: string;
@@ -55,6 +32,8 @@ interface Game {
   accentColor: string;
   status: 'playable' | 'coming-soon';
 }
+
+const ACHIEVEMENT_IDS: AchievementId[] = ['novice', 'hardcore', 'first-step', 'collector'];
 
 const CATEGORIES_MAP: Record<string, { zh: string; en: string }> = {
   '全部': { zh: '全部', en: 'All' },
@@ -78,7 +57,7 @@ const LOCALIZED_TEXTS = {
     browseLobbyBtn: '浏览大厅',
     allWorks: '所有作品',
     filteredCount: (filtered: number, total: number) => `已筛选 ${filtered} / ${total} 个项目`,
-    searchPlaceholder: '搜索游戏、技术栈...',
+    searchPlaceholder: '搜索游戏、分类、技术栈...',
     noGamesFound: '没有找到符合当前条件的游戏。',
     resetFilters: '重置筛选条件',
     difficulty: '难度',
@@ -93,7 +72,7 @@ const LOCALIZED_TEXTS = {
     achFirstStep: '第一步',
     achFirstStepDesc: '点击试玩平台上的任意一款游戏',
     achCollector: '游戏收藏家',
-    achCollectorDesc: '累计游玩不同的游戏 5 次',
+    achCollectorDesc: '累计游玩不同的游戏 5 次'
   },
   en: {
     enterBtn: 'ENTER PORTAL',
@@ -107,7 +86,7 @@ const LOCALIZED_TEXTS = {
     browseLobbyBtn: 'Browse Lobby',
     allWorks: 'All Games',
     filteredCount: (filtered: number, total: number) => `Filtered ${filtered} / ${total} items`,
-    searchPlaceholder: 'Search games, tech stack...',
+    searchPlaceholder: 'Search games, categories, tech stack...',
     noGamesFound: 'No games found matching the current criteria.',
     resetFilters: 'Reset Filters',
     difficulty: 'Difficulty',
@@ -122,9 +101,11 @@ const LOCALIZED_TEXTS = {
     achFirstStep: 'First Step',
     achFirstStepDesc: 'Play any game on the platform',
     achCollector: 'Game Collector',
-    achCollectorDesc: 'Play games 5 times',
+    achCollectorDesc: 'Play games 5 times'
   }
 };
+
+type LocalizedText = typeof LOCALIZED_TEXTS.zh;
 
 const GAMES_DATA: Game[] = [
   {
@@ -249,7 +230,81 @@ const GAMES_DATA: Game[] = [
   }
 ];
 
-const CATEGORIES = ['全部', '平台动作', '叙事探索', '沙盒建造', '经典解谜', '经营模拟'];
+const CATEGORIES = ['全部', ...Array.from(new Set(GAMES_DATA.map(game => game.category)))];
+
+const getInitialTheme = (): Theme => {
+  const savedTheme = localStorage.getItem('lunora_theme');
+  return savedTheme === 'light' ? 'light' : 'dark';
+};
+
+const getInitialLang = (): Lang => {
+  const savedLang = localStorage.getItem('lunora_lang');
+  return savedLang === 'en' ? 'en' : 'zh';
+};
+
+const getInitialEntryState = (): boolean => {
+  return sessionStorage.getItem('lunora_entry_shown') !== 'true';
+};
+
+const isAchievementId = (value: string): value is AchievementId => {
+  return ACHIEVEMENT_IDS.includes(value as AchievementId);
+};
+
+const migrateAchievementId = (value: string): AchievementId | null => {
+  const legacyMap: Record<string, AchievementId> = {
+    '初出茅庐': 'novice',
+    '硬核玩家': 'hardcore',
+    '第一步': 'first-step',
+    '游戏收藏家': 'collector'
+  };
+
+  if (isAchievementId(value)) return value;
+  return legacyMap[value] ?? null;
+};
+
+const getAchievementCopy = (id: AchievementId, text: LocalizedText) => {
+  switch (id) {
+    case 'novice':
+      return { title: text.achNovice, desc: text.achNoviceDesc };
+    case 'hardcore':
+      return { title: text.achHardcore, desc: text.achHardcoreDesc };
+    case 'first-step':
+      return { title: text.achFirstStep, desc: text.achFirstStepDesc };
+    case 'collector':
+      return { title: text.achCollector, desc: text.achCollectorDesc };
+  }
+};
+
+const ZymLogo = ({
+  size = 20,
+  color = 'var(--text-primary)',
+  className = '',
+  style = {}
+}: {
+  size?: number;
+  color?: string;
+  className?: string;
+  style?: CSSProperties;
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    style={{ display: 'inline-block', verticalAlign: 'middle', ...style }}
+  >
+    <path d="M 3.5 20 Q 6 13 8.5 6 Q 10.25 11.5 12 11.5 Q 13.75 11.5 15.5 6 Q 18 13 20.5 20" />
+    <circle cx="9" cy="14" r="1.2" fill={color} stroke="none" />
+    <circle cx="15" cy="14" r="1.2" fill={color} stroke="none" />
+    <line x1="10.5" y1="17" x2="13.5" y2="17" />
+  </svg>
+);
 
 export default function App() {
   const [isDevMode, setIsDevMode] = useState<boolean>(false);
@@ -258,177 +313,60 @@ export default function App() {
     'summit-spark': 'http://localhost:3000/summit-spark/',
     'LionCityWhispers': 'http://localhost:3000',
     'YunShenChu': 'http://localhost:5173',
-    'astra-voxel-ark': 'http://localhost:5174',
+    'astra-voxel-ark': 'http://localhost:5173',
     'sudoku-game': 'http://localhost:3001',
     'minesweeper-game': 'http://localhost:3002',
     'crateveil': 'http://localhost:5175',
-    'LastArchive': 'http://localhost:8080',
+    'LastArchive': 'http://localhost:8080'
   });
-  
   const [playTime, setPlayTime] = useState<number>(0);
   const [playedCount, setPlayedCount] = useState<number>(0);
-  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<AchievementId[]>([]);
   const [showNotification, setShowNotification] = useState<string | null>(null);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const savedTheme = localStorage.getItem('lunora_theme');
-    return (savedTheme as 'dark' | 'light') || 'dark';
-  });
-
-  const [lang, setLang] = useState<'zh' | 'en'>(() => {
-    const saved = localStorage.getItem('lunora_lang');
-    return (saved as 'zh' | 'en') || 'zh';
-  });
-
-  const [showEntry, setShowEntry] = useState<boolean>(() => {
-    const saved = sessionStorage.getItem('lunora_entry_shown');
-    return saved !== 'true';
-  });
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [lang, setLang] = useState<Lang>(getInitialLang);
+  const [showEntry, setShowEntry] = useState<boolean>(getInitialEntryState);
   const [entryFadeOut, setEntryFadeOut] = useState<boolean>(false);
-
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<string>('全部');
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   const [hoveredPlayButtonId, setHoveredPlayButtonId] = useState<string | null>(null);
 
-  const filteredGames = GAMES_DATA.filter(game => {
-    const matchesCategory = activeCategory === '全部' || game.category === activeCategory;
-    const matchesSearch = 
-      game.chineseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      game.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      game.tech.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesCategory && matchesSearch;
-  });
+  const text = LOCALIZED_TEXTS[lang];
 
-  // Apply theme class to document body
-  useEffect(() => {
-    if (theme === 'light') {
-      document.body.classList.add('light-theme');
-    } else {
-      document.body.classList.remove('light-theme');
-    }
-  }, [theme]);
+  const filteredGames = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  // Persist language setting
-  useEffect(() => {
-    localStorage.setItem('lunora_lang', lang);
-  }, [lang]);
+    return GAMES_DATA.filter(game => {
+      const matchesCategory = activeCategory === '全部' || game.category === activeCategory;
+      const searchableText = [
+        game.title,
+        game.chineseTitle,
+        game.category,
+        game.categoryEn,
+        game.description,
+        game.descriptionEn,
+        ...game.tech
+      ].join(' ').toLowerCase();
+      const matchesSearch = normalizedSearch === '' || searchableText.includes(normalizedSearch);
 
-  // Keyboard shortcut listener to focus search input (Ctrl+K or /)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || e.key === '/') {
-        const activeEl = document.activeElement;
-        const isInputActive = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-        if (isInputActive) {
-          if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-            // let it blur
-          } else {
-            return;
-          }
-        }
-        e.preventDefault();
-        const searchInput = document.querySelector('.search-input') as HTMLInputElement;
-        if (searchInput) {
-          searchInput.focus();
-          searchInput.select();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+      return matchesCategory && matchesSearch;
+    });
+  }, [activeCategory, searchTerm]);
 
-  // Play Time Counter
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setPlayTime(prev => {
-        const nextTime = prev + 1;
-        if (nextTime === 60) {
-          triggerAchievement('novice');
-        } else if (nextTime === 300) {
-          triggerAchievement('hardcore');
-        }
-        return nextTime;
-      });
-    }, 1000);
-    
-    // Load local history
-    const savedCount = localStorage.getItem('lunora_played_count');
-    if (savedCount) setPlayedCount(parseInt(savedCount));
-    
-    const savedAchieve = localStorage.getItem('lunora_achievements');
-    if (savedAchieve) {
-      try {
-        const parsed = JSON.parse(savedAchieve) as string[];
-        const migrated = parsed.map(item => {
-          if (item === '初出茅庐') return 'novice';
-          if (item === '硬核玩家') return 'hardcore';
-          if (item === '第一步') return 'first-step';
-          if (item === '游戏收藏家') return 'collector';
-          return item;
-        });
-        setUnlockedAchievements(migrated);
-        localStorage.setItem('lunora_achievements', JSON.stringify(migrated));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const triggerAchievement = (id: string) => {
+  const triggerAchievement = (id: AchievementId) => {
     setUnlockedAchievements(prev => {
       if (prev.includes(id)) return prev;
+
       const next = [...prev, id];
       localStorage.setItem('lunora_achievements', JSON.stringify(next));
-      
-      // Show notification
-      const text = LOCALIZED_TEXTS[lang];
-      let title = '';
-      let desc = '';
-      if (id === 'novice') {
-        title = text.achNovice;
-        desc = text.achNoviceDesc;
-      } else if (id === 'hardcore') {
-        title = text.achHardcore;
-        desc = text.achHardcoreDesc;
-      } else if (id === 'first-step') {
-        title = text.achFirstStep;
-        desc = text.achFirstStepDesc;
-      } else if (id === 'collector') {
-        title = text.achCollector;
-        desc = text.achCollectorDesc;
-      }
-      
-      setShowNotification(`🏆 ${text.achTitle}：【${title}】 - ${desc}`);
-      setTimeout(() => setShowNotification(null), 5000);
-      return next;
-    });
-  };
 
-  const toggleTheme = () => {
-    setTheme(prev => {
-      const next = prev === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('lunora_theme', next);
-      return next;
-    });
-  };
+      const achievement = getAchievementCopy(id, text);
+      setShowNotification(`🏆 ${text.achTitle}：【${achievement.title}】 - ${achievement.desc}`);
+      window.setTimeout(() => setShowNotification(null), 5000);
 
-  const handlePlayGame = (game: Game) => {
-    setPlayedCount(prev => {
-      const next = prev + 1;
-      localStorage.setItem('lunora_played_count', next.toString());
-      if (next === 1) {
-        triggerAchievement('first-step');
-      } else if (next === 5) {
-        triggerAchievement('collector');
-      }
       return next;
     });
-    // Redirect directly to game URL
-    window.location.href = getGameUrl(game);
   };
 
   const getGameUrl = (game: Game) => {
@@ -438,11 +376,40 @@ export default function App() {
     return game.prodUrl;
   };
 
+  const handlePlayGame = (game: Game) => {
+    setPlayedCount(prev => {
+      const next = prev + 1;
+      localStorage.setItem('lunora_played_count', next.toString());
+
+      if (next === 1) {
+        triggerAchievement('first-step');
+      } else if (next === 5) {
+        triggerAchievement('collector');
+      }
+
+      return next;
+    });
+
+    window.location.href = getGameUrl(game);
+  };
+
+  const handleEnter = () => {
+    setEntryFadeOut(true);
+    window.setTimeout(() => {
+      setShowEntry(false);
+      sessionStorage.setItem('lunora_entry_shown', 'true');
+    }, 500);
+  };
+
   const handlePortChange = (gameId: string, value: string) => {
     setCustomPorts(prev => ({
       ...prev,
       [gameId]: value
     }));
+  };
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   const formatTime = (secs: number) => {
@@ -451,191 +418,252 @@ export default function App() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const handleEnter = () => {
-    setEntryFadeOut(true);
-    setTimeout(() => {
-      setShowEntry(false);
-      sessionStorage.setItem('lunora_entry_shown', 'true');
-    }, 500);
-  };
+  useEffect(() => {
+    document.body.classList.toggle('light-theme', theme === 'light');
+    localStorage.setItem('lunora_theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('lunora_lang', lang);
+  }, [lang]);
+
+  useEffect(() => {
+    const savedCount = localStorage.getItem('lunora_played_count');
+    if (savedCount) setPlayedCount(Number.parseInt(savedCount, 10));
+
+    const savedAchievements = localStorage.getItem('lunora_achievements');
+    if (!savedAchievements) return;
+
+    try {
+      const parsed = JSON.parse(savedAchievements) as string[];
+      const migrated = parsed
+        .map(migrateAchievementId)
+        .filter((item): item is AchievementId => item !== null);
+
+      setUnlockedAchievements(migrated);
+      localStorage.setItem('lunora_achievements', JSON.stringify(migrated));
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setPlayTime(prev => {
+        const next = prev + 1;
+
+        if (next === 60) {
+          triggerAchievement('novice');
+        } else if (next === 300) {
+          triggerAchievement('hardcore');
+        }
+
+        return next;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [lang]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isSearchShortcut = (event.key === 'k' && (event.metaKey || event.ctrlKey)) || event.key === '/';
+      if (!isSearchShortcut) return;
+
+      const activeEl = document.activeElement;
+      const isInputActive = activeEl instanceof HTMLInputElement || activeEl instanceof HTMLTextAreaElement;
+      if (isInputActive && event.key === '/') return;
+
+      event.preventDefault();
+      const searchInput = document.querySelector('.search-input');
+      if (searchInput instanceof HTMLInputElement) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', paddingBottom: '80px' }}>
-      {/* Welcome Entry Overlay Screen */}
       {showEntry && (
         <div className={`portal-entry-screen ${entryFadeOut ? 'fade-out' : ''}`}>
-          {/* Subtle background mesh grid */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundImage: 'radial-gradient(var(--border-color) 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
-            maskImage: 'radial-gradient(circle at 50% 50%, black, transparent 85%)',
-            WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black, transparent 85%)',
-            pointerEvents: 'none',
-            zIndex: -1
-          }}></div>
-          
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundImage: 'radial-gradient(var(--border-color) 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+              maskImage: 'radial-gradient(circle at 50% 50%, black, transparent 85%)',
+              WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black, transparent 85%)',
+              pointerEvents: 'none',
+              zIndex: -1
+            }}
+          />
+
           <div className="entry-card">
             <div className="logo-container">
-              <div className="logo-glow-ring"></div>
+              <div className="logo-glow-ring" />
               <ZymLogo size={44} className="animate-float" style={{ position: 'relative', zIndex: 1 }} />
             </div>
-
             <span className="entry-kicker">Unified Indie Portal</span>
             <h1 className="entry-title">LUNORA</h1>
-            
-            <div className="entry-divider"></div>
-            
-            <p className="entry-tagline">
-              在灵感与现实的交界处，开启独立灵魂的游历。
-            </p>
-            
+            <div className="entry-divider" />
+            <p className="entry-tagline">在灵感与现实的交界处，开启独立灵魂的游历。</p>
             <button className="entry-btn" onClick={handleEnter}>
-              {LOCALIZED_TEXTS[lang].enterBtn}
+              {text.enterBtn}
             </button>
           </div>
         </div>
       )}
 
-      {/* Background glow effects */}
-      <div className="ambient-glow-1"></div>
-      <div className="ambient-glow-2"></div>
+      <div className="ambient-glow-1" />
+      <div className="ambient-glow-2" />
 
-      {/* Achievement Alert */}
       {showNotification && (
-        <div className="glass" style={{
-          position: 'fixed',
-          top: '24px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          borderRadius: '4px',
-          padding: '10px 20px',
-          color: 'var(--text-primary)',
-          fontSize: '13px',
-          fontWeight: 500,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          backdropFilter: 'blur(8px)'
-        }}>
+        <div
+          className="glass"
+          style={{
+            position: 'fixed',
+            top: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000,
+            borderRadius: '4px',
+            padding: '10px 20px',
+            color: 'var(--text-primary)',
+            fontSize: '13px',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            backdropFilter: 'blur(8px)'
+          }}
+        >
           <Trophy size={15} color="var(--text-primary)" />
           <span>{showNotification}</span>
         </div>
       )}
 
-      {/* Header Navbar */}
-      <header className="glass" style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        padding: '14px 40px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid var(--border-color)',
-        marginBottom: '32px'
-      }}>
+      <header
+        className="glass"
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          padding: '14px 40px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid var(--border-color)',
+          marginBottom: '32px'
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ZymLogo size={20} color="var(--text-primary)" />
-          <h1 style={{ 
-            fontSize: '18px', 
-            letterSpacing: '0.12em', 
-            color: 'var(--text-primary)'
-          }}>LUNORA</h1>
+          <h1 style={{ fontSize: '18px', letterSpacing: '0.12em', color: 'var(--text-primary)' }}>LUNORA</h1>
         </div>
 
-        {/* Stats and Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div className="glass" style={{ 
-            display: 'flex', 
-            gap: '12px', 
-            fontSize: '12px', 
-            color: 'var(--text-secondary)',
-            padding: '5px 12px',
-            borderRadius: '20px',
-            alignItems: 'center',
-            background: 'var(--bg-dark)',
-            border: '1px solid var(--border-color)',
-            boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title={LOCALIZED_TEXTS[lang].statsDuration}>
+          <div
+            className="glass"
+            style={{
+              display: 'flex',
+              gap: '12px',
+              fontSize: '12px',
+              color: 'var(--text-secondary)',
+              padding: '5px 12px',
+              borderRadius: '20px',
+              alignItems: 'center',
+              background: 'var(--bg-dark)',
+              border: '1px solid var(--border-color)',
+              boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title={text.statsDuration}>
               <Clock size={12} style={{ color: 'var(--primary)' }} />
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 500 }}>{formatTime(playTime)}</span>
             </div>
-            <div style={{ width: '1px', height: '10px', background: 'var(--border-color)' }}></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title={LOCALIZED_TEXTS[lang].statsLaunches}>
+            <div style={{ width: '1px', height: '10px', background: 'var(--border-color)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title={text.statsLaunches}>
               <Flame size={12} style={{ color: 'var(--primary)' }} />
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 500 }}>{playedCount}</span>
             </div>
-            <div style={{ width: '1px', height: '10px', background: 'var(--border-color)' }}></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title={LOCALIZED_TEXTS[lang].statsAchievements}>
+            <div style={{ width: '1px', height: '10px', background: 'var(--border-color)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title={text.statsAchievements}>
               <Trophy size={12} style={{ color: 'var(--primary)' }} />
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 500 }}>{unlockedAchievements.length}/4</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 500 }}>
+                {unlockedAchievements.length}/{ACHIEVEMENT_IDS.length}
+              </span>
             </div>
           </div>
 
-          <button 
-            onClick={toggleTheme} 
-            className="btn btn-secondary" 
+          <button
+            onClick={toggleTheme}
+            className="btn btn-secondary"
             style={{ padding: '6px 10px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             title={theme === 'dark' ? 'Light' : 'Dark'}
           >
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
-          <button 
-            onClick={() => setShowSettings(!showSettings)} 
-            className="btn btn-secondary" 
+          <button
+            onClick={() => setShowSettings(prev => !prev)}
+            className="btn btn-secondary"
             style={{ padding: '6px 10px', borderRadius: '4px' }}
-            title={LOCALIZED_TEXTS[lang].settingsTitle}
+            title={text.settingsTitle}
           >
             <Settings size={15} />
           </button>
         </div>
       </header>
 
-      {/* Main Container */}
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px' }}>
-        
-        {/* Intro Hero Section */}
-        <section className="glass hero-card" style={{
-          padding: '36px 44px',
-          borderRadius: 'var(--radius-lg)',
-          marginBottom: '32px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '20px',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Subtle hero graphic gradient overlay */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            width: '300px',
-            height: '100%',
-            background: 'linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.04))',
-            pointerEvents: 'none',
-            zIndex: 0
-          }}></div>
+        <section
+          className="glass hero-card"
+          style={{
+            padding: '36px 44px',
+            borderRadius: 'var(--radius-lg)',
+            marginBottom: '32px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '20px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '300px',
+              height: '100%',
+              background: 'linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.04))',
+              pointerEvents: 'none',
+              zIndex: 0
+            }}
+          />
 
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <h2 className="hero-title" style={{ fontSize: '28px', letterSpacing: '0.15em', margin: 0 }}>LUNORA</h2>
+            <h2 className="hero-title" style={{ fontSize: '28px', letterSpacing: '0.15em', margin: 0 }}>
+              LUNORA
+            </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '8px', letterSpacing: '0.04em', lineHeight: '1.7', maxWidth: '600px' }}>
               在灵感与现实的交界处，开启独立灵魂的游历。
             </p>
           </div>
+
           <div style={{ display: 'flex', gap: '12px', position: 'relative', zIndex: 1 }}>
             <a href="#games-lobby" className="btn btn-primary">
-              {LOCALIZED_TEXTS[lang].browseLobbyBtn}
+              {text.browseLobbyBtn}
             </a>
             <a href="https://github.com/Lunora-Gather" target="_blank" rel="noreferrer" className="btn btn-secondary">
               GitHub
@@ -643,53 +671,35 @@ export default function App() {
           </div>
         </section>
 
-        {/* Controls: Search and Filters */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          gap: '16px',
-          flexWrap: 'wrap',
-          marginBottom: '28px'
-        }}>
-          {/* Category Pills */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '8px', 
-            flexWrap: 'wrap'
-          }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '28px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {CATEGORIES.map(category => (
               <button
                 key={category}
                 onClick={() => setActiveCategory(category)}
                 className={`category-pill ${activeCategory === category ? 'active' : ''}`}
               >
-                {CATEGORIES_MAP[category] ? CATEGORIES_MAP[category][lang] : category}
+                {CATEGORIES_MAP[category]?.[lang] ?? category}
               </button>
             ))}
           </div>
 
-          {/* Search Input */}
-          <div style={{ 
-            position: 'relative',
-            width: '100%',
-            maxWidth: '300px'
-          }}>
-            <Search 
-              size={14} 
-              style={{ 
-                position: 'absolute', 
-                left: '12px', 
-                top: '50%', 
-                transform: 'translateY(-50%)', 
-                color: 'var(--text-muted)' 
-              }} 
+          <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
+            <Search
+              size={14}
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-muted)'
+              }}
             />
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={LOCALIZED_TEXTS[lang].searchPlaceholder}
+              onChange={event => setSearchTerm(event.target.value)}
+              placeholder={text.searchPlaceholder}
               className="search-input"
             />
             {searchTerm ? (
@@ -717,34 +727,31 @@ export default function App() {
           </div>
         </div>
 
-        {/* Games Lobby Grid */}
         <section id="games-lobby">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 600, letterSpacing: '0.02em' }}>
-                {activeCategory === '全部' ? LOCALIZED_TEXTS[lang].allWorks : (CATEGORIES_MAP[activeCategory] ? CATEGORIES_MAP[activeCategory][lang] : activeCategory)}
+                {activeCategory === '全部' ? text.allWorks : CATEGORIES_MAP[activeCategory]?.[lang] ?? activeCategory}
               </h2>
               {isDevMode && <span className="dev-badge">DEV</span>}
             </div>
             <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-              {LOCALIZED_TEXTS[lang].filteredCount(filteredGames.length, GAMES_DATA.length)}
+              {text.filteredCount(filteredGames.length, GAMES_DATA.length)}
             </span>
           </div>
 
           {filteredGames.length === 0 ? (
-            <div className="glass" style={{
-              padding: '64px 24px',
-              borderRadius: 'var(--radius-md)',
-              textAlign: 'center',
-              color: 'var(--text-secondary)'
-            }}>
-              <p style={{ fontSize: '14px' }}>{LOCALIZED_TEXTS[lang].noGamesFound}</p>
-              <button 
-                onClick={() => { setSearchTerm(''); setActiveCategory('全部'); }}
+            <div className="glass" style={{ padding: '64px 24px', borderRadius: 'var(--radius-md)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <p style={{ fontSize: '14px' }}>{text.noGamesFound}</p>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setActiveCategory('全部');
+                }}
                 className="btn btn-secondary"
                 style={{ marginTop: '16px', fontSize: '12.5px', padding: '6px 12px', borderRadius: '4px' }}
               >
-                {LOCALIZED_TEXTS[lang].resetFilters}
+                {text.resetFilters}
               </button>
             </div>
           ) : (
@@ -752,11 +759,11 @@ export default function App() {
               {filteredGames.map(game => {
                 const isCardHovered = hoveredCardId === game.id;
                 const isButtonHovered = hoveredPlayButtonId === game.id;
-                
+
                 return (
-                  <div 
-                    key={game.id} 
-                    className="glass game-card masonry-item" 
+                  <div
+                    key={game.id}
+                    className="glass game-card masonry-item"
                     onMouseEnter={() => setHoveredCardId(game.id)}
                     onMouseLeave={() => setHoveredCardId(null)}
                     style={{
@@ -764,8 +771,8 @@ export default function App() {
                       padding: '20px',
                       display: 'block',
                       borderColor: isCardHovered ? `${game.accentColor}50` : 'var(--border-color)',
-                      boxShadow: isCardHovered 
-                        ? `0 16px 36px ${game.accentColor}12, inset 0 1px 0 rgba(255, 255, 255, 0.08)` 
+                      boxShadow: isCardHovered
+                        ? `0 16px 36px ${game.accentColor}12, inset 0 1px 0 rgba(255, 255, 255, 0.08)`
                         : 'var(--card-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
                       background: isCardHovered ? 'var(--bg-card-hover)' : 'var(--bg-card)',
                       transform: isCardHovered ? 'translateY(-4px)' : 'none',
@@ -773,33 +780,30 @@ export default function App() {
                     }}
                   >
                     <div>
-                      {/* Category, Difficulty and Status */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{
-                            background: `${game.accentColor}0a`,
-                            color: game.accentColor,
-                            fontSize: '10.5px',
-                            fontWeight: 600,
-                            padding: '3px 8px',
-                            borderRadius: '3px',
-                            border: `1px solid ${game.accentColor}15`,
-                            letterSpacing: '0.02em',
-                            textTransform: 'uppercase',
-                            transition: 'var(--transition-smooth)'
-                          }}>
+                          <span
+                            style={{
+                              background: `${game.accentColor}0a`,
+                              color: game.accentColor,
+                              fontSize: '10.5px',
+                              fontWeight: 600,
+                              padding: '3px 8px',
+                              borderRadius: '3px',
+                              border: `1px solid ${game.accentColor}15`,
+                              letterSpacing: '0.02em',
+                              textTransform: 'uppercase',
+                              transition: 'var(--transition-smooth)'
+                            }}
+                          >
                             {lang === 'zh' ? game.category : game.categoryEn}
                           </span>
-                          
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '2.5px'
-                          }} title={`${LOCALIZED_TEXTS[lang].difficulty}: ${game.difficulty} / 5`}>
+
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.5px' }} title={`${text.difficulty}: ${game.difficulty} / 5`}>
                             {Array.from({ length: 5 }).map((_, i) => (
-                              <span 
-                                key={i} 
-                                style={{ 
+                              <span
+                                key={`${game.id}-${i}`}
+                                style={{
                                   color: i < game.difficulty ? game.accentColor : 'var(--border-color)',
                                   opacity: i < game.difficulty ? 0.8 : 0.25,
                                   fontSize: '13px',
@@ -811,81 +815,70 @@ export default function App() {
                             ))}
                           </span>
                         </div>
-                        
+
                         {game.status === 'coming-soon' && (
-                          <span style={{
-                            background: 'var(--bg-dark)',
-                            color: 'var(--text-muted)',
-                            fontSize: '10.5px',
-                            fontWeight: 600,
-                            padding: '3px 8px',
-                            borderRadius: '3px',
-                            border: '1px solid var(--border-color)'
-                          }}>
-                            {LOCALIZED_TEXTS[lang].inDevelopment}
+                          <span
+                            style={{
+                              background: 'var(--bg-dark)',
+                              color: 'var(--text-muted)',
+                              fontSize: '10.5px',
+                              fontWeight: 600,
+                              padding: '3px 8px',
+                              borderRadius: '3px',
+                              border: '1px solid var(--border-color)'
+                            }}
+                          >
+                            {text.inDevelopment}
                           </span>
                         )}
                       </div>
 
-                      {/* Title: English/Chinese on the same line */}
-                      <div style={{ marginBottom: '12px' }}>
-                        <h3 style={{ 
-                          fontSize: '17px', 
-                          color: isCardHovered ? game.accentColor : 'var(--text-primary)', 
+                      <h3
+                        style={{
+                          fontSize: '17px',
+                          color: isCardHovered ? game.accentColor : 'var(--text-primary)',
                           fontWeight: 600,
                           lineHeight: 1.3,
                           transition: 'var(--transition-smooth)',
-                          letterSpacing: '0.02em'
-                        }}>
-                          {game.title}/{game.chineseTitle}
-                        </h3>
-                      </div>
+                          letterSpacing: '0.02em',
+                          marginBottom: '12px'
+                        }}
+                      >
+                        {game.title}/{game.chineseTitle}
+                      </h3>
 
-                      {/* Description */}
-                      <p style={{
-                        color: 'var(--text-secondary)',
-                        fontSize: '13px',
-                        lineHeight: 1.5,
-                        marginBottom: '16px'
-                      }}>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.5, marginBottom: '16px' }}>
                         {lang === 'zh' ? game.description : game.descriptionEn}
                       </p>
                     </div>
 
-                    {/* Bottom stats and action */}
                     <div>
-                      {/* Tech stack badges */}
-                      <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '4px',
-                        marginBottom: '16px',
-                        borderTop: '1px solid var(--border-color)',
-                        paddingTop: '12px'
-                      }}>
-                        {game.tech.map(t => (
-                          <span key={t} style={{
-                            fontSize: '10px',
-                            color: 'var(--text-secondary)',
-                            background: 'var(--bg-dark)',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border-color)',
-                            fontWeight: 500
-                          }}>
-                            {t}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                        {game.tech.map(tech => (
+                          <span
+                            key={tech}
+                            style={{
+                              fontSize: '10px',
+                              color: 'var(--text-secondary)',
+                              background: 'var(--bg-dark)',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--border-color)',
+                              fontWeight: 500
+                            }}
+                          >
+                            {tech}
                           </span>
                         ))}
                       </div>
 
-                      {/* Play trigger button */}
                       {game.status === 'playable' ? (
-                        <button 
+                        <button
                           onClick={() => handlePlayGame(game)}
                           onMouseEnter={() => setHoveredPlayButtonId(game.id)}
                           onMouseLeave={() => setHoveredPlayButtonId(null)}
-                          style={{ 
-                            width: '100%', 
+                          style={{
+                            width: '100%',
                             borderRadius: '4px',
                             background: isButtonHovered ? game.accentColor : `${game.accentColor}12`,
                             color: isButtonHovered ? '#ffffff' : game.accentColor,
@@ -903,19 +896,19 @@ export default function App() {
                             gap: '8px'
                           }}
                         >
-                          <Play 
-                            size={12} 
-                            fill="currentColor" 
-                            style={{ 
+                          <Play
+                            size={12}
+                            fill="currentColor"
+                            style={{
                               transform: isButtonHovered ? 'translateX(2px)' : 'none',
                               transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                              opacity: isButtonHovered ? 1 : 0.8 
-                            }} 
+                              opacity: isButtonHovered ? 1 : 0.8
+                            }}
                           />
-                          {LOCALIZED_TEXTS[lang].playNow}
+                          {text.playNow}
                         </button>
                       ) : (
-                        <button 
+                        <button
                           disabled
                           style={{
                             width: '100%',
@@ -933,7 +926,7 @@ export default function App() {
                             gap: '8px'
                           }}
                         >
-                          {LOCALIZED_TEXTS[lang].comingSoon}
+                          {text.comingSoon}
                         </button>
                       )}
                     </div>
@@ -945,28 +938,30 @@ export default function App() {
         </section>
       </main>
 
-      {/* Developer / Platform Settings Drawer Overlay */}
       {showSettings && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          width: '320px',
-          height: '100vh',
-          zIndex: 500,
-          boxShadow: 'var(--settings-shadow)',
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          animation: 'slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
-        }} className="glass">
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: '320px',
+            height: '100vh',
+            zIndex: 500,
+            boxShadow: 'var(--settings-shadow)',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            animation: 'slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+          className="glass"
+        >
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h3 style={{ color: 'var(--text-primary)', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                <Settings size={16} /> {LOCALIZED_TEXTS[lang].settingsTitle}
+                <Settings size={16} /> {text.settingsTitle}
               </h3>
-              <button 
+              <button
                 onClick={() => setShowSettings(false)}
                 style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}
               >
@@ -974,18 +969,10 @@ export default function App() {
               </button>
             </div>
 
-            {/* Language selection section */}
             <div style={{ marginBottom: '14px' }}>
-              <div style={{
-                background: 'var(--bg-dark)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
-                padding: '10px 12px'
-              }}>
+              <div style={{ background: 'var(--bg-dark)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '10px 12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>
-                    {LOCALIZED_TEXTS[lang].langSelect}
-                  </span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{text.langSelect}</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     <button
                       onClick={() => setLang('zh')}
@@ -1024,66 +1011,64 @@ export default function App() {
               </div>
             </div>
 
-            {/* General section */}
             <div style={{ marginBottom: '20px' }}>
-              <div style={{
-                background: 'var(--bg-dark)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
-                padding: '12px 14px'
-              }}>
+              <div style={{ background: 'var(--bg-dark)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '12px 14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{LOCALIZED_TEXTS[lang].devMode}</span>
-                  <label style={{
-                    position: 'relative',
-                    display: 'inline-block',
-                    width: '36px',
-                    height: '20px'
-                  }}>
-                    <input 
-                      type="checkbox" 
-                      checked={isDevMode} 
-                      onChange={(e) => setIsDevMode(e.target.checked)}
-                      style={{ opacity: 0, width: 0, height: 0 }} 
+                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{text.devMode}</span>
+                  <label style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px' }}>
+                    <input
+                      type="checkbox"
+                      checked={isDevMode}
+                      onChange={event => setIsDevMode(event.target.checked)}
+                      style={{ opacity: 0, width: 0, height: 0 }}
                     />
-                    <span style={{
-                      position: 'absolute',
-                      cursor: 'pointer',
-                      top: 0, left: 0, right: 0, bottom: 0,
-                      backgroundColor: isDevMode ? 'var(--primary)' : 'var(--accent)',
-                      transition: '0.25s',
-                      borderRadius: '20px'
-                    }}>
-                      <span style={{
+                    <span
+                      style={{
                         position: 'absolute',
-                        content: '""',
-                        height: '14px',
-                        width: '14px',
-                        left: '3px',
-                        bottom: '3px',
-                        backgroundColor: isDevMode ? 'var(--bg-darker)' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: isDevMode ? 'var(--primary)' : 'var(--accent)',
                         transition: '0.25s',
-                        borderRadius: '50%',
-                        transform: isDevMode ? 'translateX(16px)' : 'none'
-                      }}></span>
+                        borderRadius: '20px'
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: 'absolute',
+                          height: '14px',
+                          width: '14px',
+                          left: '3px',
+                          bottom: '3px',
+                          backgroundColor: isDevMode ? 'var(--bg-darker)' : 'var(--text-muted)',
+                          transition: '0.25s',
+                          borderRadius: '50%',
+                          transform: isDevMode ? 'translateX(16px)' : 'none'
+                        }}
+                      />
                     </span>
                   </label>
                 </div>
               </div>
             </div>
 
-            {/* Ports/URLs configuration */}
             {isDevMode && (
               <div style={{ flex: 1, overflowY: 'auto', maxHeight: '42vh', paddingRight: '4px' }}>
-                <h4 style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>{LOCALIZED_TEXTS[lang].portConfig}</h4>
+                <h4 style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
+                  {text.portConfig}
+                </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {GAMES_DATA.filter(g => g.status === 'playable').map(game => (
+                  {GAMES_DATA.filter(game => game.status === 'playable').map(game => (
                     <div key={game.id} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{game.title}/{game.chineseTitle}</label>
-                      <input 
-                        type="text" 
-                        value={customPorts[game.id]} 
-                        onChange={(e) => handlePortChange(game.id, e.target.value)}
+                      <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        {game.title}/{game.chineseTitle}
+                      </label>
+                      <input
+                        type="text"
+                        value={customPorts[game.id] ?? game.devUrl}
+                        onChange={event => handlePortChange(game.id, event.target.value)}
                         style={{
                           background: 'var(--bg-dark)',
                           border: '1px solid var(--border-color)',
@@ -1101,15 +1086,8 @@ export default function App() {
             )}
           </div>
 
-          {/* Settings Footer */}
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '11px',
-              color: 'var(--text-muted)'
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
               <Info size={12} />
               <span>Org: Lunora-Gather</span>
             </div>
@@ -1117,9 +1095,6 @@ export default function App() {
         </div>
       )}
 
-
-
-      {/* Global CSS keyframe styles for React animations */}
       <style>{`
         @keyframes slideIn {
           from { transform: translateX(100%); }
