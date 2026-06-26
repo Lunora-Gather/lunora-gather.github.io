@@ -41,7 +41,9 @@ const CATEGORIES_MAP: Record<string, { zh: string; en: string }> = {
   '叙事探索': { zh: '叙事探索', en: 'Narrative' },
   '沙盒建造': { zh: '沙盒建造', en: 'Sandbox' },
   '经典解谜': { zh: '经典解谜', en: 'Puzzle' },
-  '经营模拟': { zh: '经营模拟', en: 'Simulation' }
+  '经营模拟': { zh: '经营模拟', en: 'Simulation' },
+  '策略塔防': { zh: '策略塔防', en: 'Tower Defense' },
+  '策略模拟': { zh: '策略模拟', en: 'Strategy Sim' }
 };
 
 const LOCALIZED_TEXTS = {
@@ -199,6 +201,21 @@ const GAMES_DATA: Game[] = [
     status: 'playable'
   },
   {
+    id: '2048',
+    title: '2048 · Zen Synthesis',
+    chineseTitle: '2048',
+    category: '经典解谜',
+    categoryEn: 'Puzzle',
+    difficulty: 2,
+    description: '精致的网页版 2048。保留经典数字合并规则，并加入 4×4、5×5、6×6 棋盘、主题切换、音效预设、撤销、统计、成就与移动端适配。',
+    descriptionEn: 'A polished browser-based 2048 experience with multiple board sizes, themes, sound presets, undo, score stats, achievements, and responsive touch controls.',
+    tech: ['HTML5', 'CSS3', 'Vanilla JS', 'Web Audio API'],
+    prodUrl: 'https://lunora-gather.github.io/2048/',
+    devUrl: 'http://localhost:8080',
+    accentColor: '#f8fafc',
+    status: 'playable'
+  },
+  {
     id: 'LastArchive',
     title: 'Last Archive',
     chineseTitle: '最后档案城',
@@ -211,6 +228,36 @@ const GAMES_DATA: Game[] = [
     prodUrl: 'https://huggingface.co/spaces/Jiehu-Claire/last-archive',
     devUrl: 'http://localhost:8080',
     accentColor: '#f97316',
+    status: 'playable'
+  },
+  {
+    id: 'Praesidium',
+    title: 'Praesidium',
+    chineseTitle: '守望',
+    category: '策略塔防',
+    categoryEn: 'Tower Defense',
+    difficulty: 4,
+    description: '高完成度科幻塔防游戏。基于 TypeScript、HTML5 Canvas 与 Vite 构建，包含程序化渲染、程序化音效、6 种塔、5 类敌人、天赋树、成就、每日挑战与离线排行榜。',
+    descriptionEn: 'A premium sci-fi tower defense game built with TypeScript, HTML5 Canvas, and Vite, featuring procedural visuals/audio, six towers, enemy types, talents, achievements, daily challenges, and offline leaderboards.',
+    tech: ['TypeScript', 'Vite', 'HTML5 Canvas', 'Web Audio API'],
+    prodUrl: 'https://lunora-gather.github.io/Praesidium/',
+    devUrl: 'http://localhost:5175',
+    accentColor: '#22c55e',
+    status: 'playable'
+  },
+  {
+    id: 'Imperium-Aeternum',
+    title: 'Imperium Aeternum',
+    chineseTitle: '永恒帝国',
+    category: '策略模拟',
+    categoryEn: 'Strategy Sim',
+    difficulty: 5,
+    description: '以国家治理为核心的历史策略模拟游戏。在财政、粮食、人口、法律、派系、战争、外交、科技、地方治理与长期稳定之间做取舍，建立能长期运转的国家机器。',
+    descriptionEn: 'A grand strategy and national governance simulation about balancing treasury, food, population, law, factions, war, diplomacy, technology, local administration, and long-term stability.',
+    tech: ['TypeScript', 'React 18', 'Vite', 'Zustand', 'Vitest'],
+    prodUrl: 'https://lunora-gather.github.io/Imperium-Aeternum/',
+    devUrl: 'http://localhost:5173',
+    accentColor: '#d4af37',
     status: 'playable'
   },
   {
@@ -317,7 +364,10 @@ export default function App() {
     'sudoku-game': 'http://localhost:3001',
     'minesweeper-game': 'http://localhost:3002',
     'crateveil': 'http://localhost:5175',
-    'LastArchive': 'http://localhost:8080'
+    '2048': 'http://localhost:8080',
+    'LastArchive': 'http://localhost:8080',
+    'Praesidium': 'http://localhost:5175',
+    'Imperium-Aeternum': 'http://localhost:5173'
   });
   const [playTime, setPlayTime] = useState<number>(0);
   const [playedCount, setPlayedCount] = useState<number>(0);
