@@ -8,7 +8,9 @@ export const CATEGORIES_MAP: Record<string, { zh: string; en: string }> = {
   '经典解谜': { zh: '经典解谜', en: 'Puzzle' },
   '经营模拟': { zh: '经营模拟', en: 'Simulation' },
   '策略塔防': { zh: '策略塔防', en: 'Tower Defense' },
-  '策略模拟': { zh: '策略模拟', en: 'Strategy Sim' }
+  '策略模拟': { zh: '策略模拟', en: 'Strategy Sim' },
+  '语义解谜': { zh: '语义解谜', en: 'Semantic Puzzle' },
+  '编程策略': { zh: '编程策略', en: 'Programming Strategy' }
 };
 
 export const LOCALIZED_TEXTS = {

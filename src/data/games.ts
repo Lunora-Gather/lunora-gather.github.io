@@ -180,6 +180,36 @@ export const GAMES_DATA: Game[] = [
     devUrl: 'http://localhost:3000',
     accentColor: '#06b6d4',
     status: 'coming-soon'
+  },
+  {
+    id: 'echo-string-genesis-prototype',
+    title: 'Echo-String: Genesis Prototype',
+    chineseTitle: '语弦生态：断句庭院灰盒原型',
+    category: '语义解谜',
+    categoryEn: 'Semantic Puzzle',
+    difficulty: 3,
+    description: '《语弦生态：创世纪》的可玩网页原型。通过扫描对象、剥离词缀、注入槽位，配合温度、介质与力场触发蒸汽爆发、破裂窗口等组合反应，挑战残章守卫。',
+    descriptionEn: 'A playable web prototype of Echo-String: Genesis. Scan objects, extract affixes, and inject them into semantic slots, combining thermal and field reactions to solve puzzles and defeat guards.',
+    tech: ['HTML5', 'CSS3', 'JS ES6'],
+    prodUrl: 'https://lunora-gather.github.io/echo-string-genesis-prototype/',
+    devUrl: 'http://localhost:4174/',
+    accentColor: '#29d3a0',
+    status: 'playable'
+  },
+  {
+    id: 'Overlogic',
+    title: 'Overlogic',
+    chineseTitle: 'Overlogic',
+    category: '编程策略',
+    categoryEn: 'Programming Strategy',
+    difficulty: 4,
+    description: '二维自走棋Roguelike策略游戏。通过编写“IF 条件 THEN 行动”规则库，为战斗机器人定制大脑，在分支路线和多变关卡中不断调试，优化规则序列。',
+    descriptionEn: 'A 2D top-down auto-combat roguelike strategy game. Custom-program a combat brain for your robot with prioritized rules, run simulated battles, and refine the rule stack.',
+    tech: ['HTML5', 'CSS3', 'ES Modules'],
+    prodUrl: 'https://lunora-gather.github.io/Overlogic/',
+    devUrl: 'http://localhost:3000/',
+    accentColor: '#00d2ff',
+    status: 'playable'
   }
 ];
 
