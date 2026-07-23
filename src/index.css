@@ -269,21 +269,10 @@ h1, h2, h3, h4 {
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  background-image: linear-gradient(115deg, rgba(129, 140, 248, 0.08), transparent 46%);
-}
-
-.hero-card::before {
-  content: "";
-  position: absolute;
-  width: 240px;
-  height: 240px;
-  right: 11%;
-  top: 50%;
-  transform: translateY(-50%);
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.18), rgba(129, 140, 248, 0.08) 28%, transparent 64%);
-  filter: blur(2px);
-  z-index: -1;
+  background-image:
+    radial-gradient(circle at 72% 22%, rgba(129, 140, 248, 0.14) 0 1px, transparent 2px),
+    radial-gradient(circle at 82% 72%, rgba(14, 165, 233, 0.11) 0 1px, transparent 2px),
+    linear-gradient(115deg, rgba(129, 140, 248, 0.08), transparent 46%);
 }
 
 .hero-copy,
@@ -295,6 +284,14 @@ h1, h2, h3, h4 {
 .hero-actions {
   display: flex;
   gap: 12px;
+  margin-left: auto;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-darker) 48%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .hero-eyebrow {
@@ -309,34 +306,17 @@ h1, h2, h3, h4 {
   text-transform: uppercase;
 }
 
-.hero-orbit {
-  position: absolute;
-  right: 15%;
-  top: 50%;
-  width: 210px;
-  height: 76px;
-  border: 1px solid rgba(129, 140, 248, 0.2);
-  border-radius: 50%;
-  transform: translateY(-50%) rotate(-13deg);
-  z-index: 0;
-}
-
-.hero-orbit span {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--primary);
-  box-shadow: 0 0 10px var(--primary);
-}
-
-.hero-orbit span:nth-child(1) { left: 8%; top: 49%; }
-.hero-orbit span:nth-child(2) { right: 18%; top: 9%; width: 3px; height: 3px; }
-.hero-orbit span:nth-child(3) { right: 4%; bottom: 30%; width: 2px; height: 2px; }
-
 .light-theme .hero-card {
   background-color: rgba(255, 255, 255, 0.9);
-  background-image: linear-gradient(115deg, rgba(79, 70, 229, 0.09), transparent 52%);
+  background-image:
+    radial-gradient(circle at 72% 22%, rgba(79, 70, 229, 0.14) 0 1px, transparent 2px),
+    radial-gradient(circle at 82% 72%, rgba(14, 165, 233, 0.12) 0 1px, transparent 2px),
+    linear-gradient(115deg, rgba(79, 70, 229, 0.08), transparent 52%);
+}
+
+.light-theme .hero-actions {
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 6px 18px rgba(30, 41, 59, 0.06), inset 0 1px 0 #ffffff;
 }
 
 .light-theme .game-card:hover {
@@ -655,13 +635,6 @@ input:focus-visible {
 
   .hero-actions .btn {
     flex: 1;
-  }
-
-  .hero-orbit {
-    right: -36px;
-    top: 32%;
-    width: 170px;
-    opacity: 0.55;
   }
 
   .filter-toolbar {

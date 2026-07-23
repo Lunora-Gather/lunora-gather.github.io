@@ -434,7 +434,6 @@ export default function App() {
 
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
         <section className="glass hero-card">
-          <div className="hero-orbit" aria-hidden="true"><span /><span /><span /></div>
           <div className="hero-copy">
             <div className="hero-eyebrow"><Sparkles size={12} />{text.heroEyebrow}</div>
             <h2 className="hero-title" style={{ fontSize: 28, letterSpacing: '0.15em', margin: 0 }}>LUNORA</h2>
