@@ -275,8 +275,10 @@ export const DEFAULT_CUSTOM_PORTS = Object.fromEntries(
 
 export const getGameDisplayTitle = (game: Game, lang: 'zh-CN' | 'zh-TW' | 'en' = 'zh-CN') => {
   if (lang === 'en') return game.title;
+  return lang === 'zh-TW' ? game.chineseTitleTraditional ?? game.title : game.chineseTitle ?? game.title;
+};
 
-  const localizedTitle = lang === 'zh-TW' ? game.chineseTitleTraditional : game.chineseTitle;
-  if (!localizedTitle || localizedTitle === game.title) return game.title;
-  return `${game.title}/${localizedTitle}`;
+export const getGameOriginalTitle = (game: Game, lang: 'zh-CN' | 'zh-TW' | 'en' = 'zh-CN') => {
+  const localizedTitle = getGameDisplayTitle(game, lang);
+  return lang !== 'en' && localizedTitle !== game.title ? game.title : null;
 };

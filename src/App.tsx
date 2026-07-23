@@ -11,13 +11,16 @@ import {
   Search,
   Play,
   Heart,
-  History
+  History,
+  ChevronDown,
+  Sparkles
 } from 'lucide-react';
 import {
   CATEGORIES,
   DEFAULT_CUSTOM_PORTS,
   GAMES_DATA,
   getGameDisplayTitle,
+  getGameOriginalTitle,
   type Game
 } from './data/games';
 import { CATEGORIES_MAP, LOCALIZED_TEXTS, type Lang, type LocalizedText } from './data/i18n';
@@ -155,10 +158,17 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<string>('全部');
   const [libraryView, setLibraryView] = useState<LibraryView>('all');
+  const [showMobileCategories, setShowMobileCategories] = useState<boolean>(false);
   const [favoriteGameIds, setFavoriteGameIds] = useState<string[]>(() => getStoredStringArray(STORAGE_KEYS.favorites));
   const [recentGameIds, setRecentGameIds] = useState<string[]>(() => getStoredStringArray(STORAGE_KEYS.recentGames));
 
   const text = LOCALIZED_TEXTS[lang];
+
+  const getDifficultyLabel = (difficulty: number) => {
+    if (difficulty <= 2) return text.difficultyRelaxed;
+    if (difficulty === 3) return text.difficultyStandard;
+    return text.difficultyChallenge;
+  };
 
   const lobbyTitle = libraryView === 'favorites'
     ? text.favorites
@@ -423,18 +433,20 @@ export default function App() {
       </header>
 
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
-        <section className="glass hero-card" style={{ padding: '36px 44px', borderRadius: 'var(--radius-lg)', marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20, position: 'relative', overflow: 'hidden' }}>
-          <div>
+        <section className="glass hero-card">
+          <div className="hero-orbit" aria-hidden="true"><span /><span /><span /></div>
+          <div className="hero-copy">
+            <div className="hero-eyebrow"><Sparkles size={12} />{text.heroEyebrow}</div>
             <h2 className="hero-title" style={{ fontSize: 28, letterSpacing: '0.15em', margin: 0 }}>LUNORA</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 8, letterSpacing: '0.04em', lineHeight: 1.7, maxWidth: 600 }}>{text.heroTagline}</p>
           </div>
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className="hero-actions">
             <a href="#games-lobby" className="btn btn-primary">{text.browseLobbyBtn}</a>
             <a href="https://github.com/Lunora-Gather" target="_blank" rel="noreferrer" className="btn btn-secondary">GitHub</a>
           </div>
         </section>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 28 }}>
+        <div className="filter-toolbar">
           <div className="filter-groups">
             <div className="filter-group" role="group" aria-label={text.libraryViewLabel}>
               <button onClick={() => setLibraryView('all')} aria-pressed={libraryView === 'all'} className={`category-pill ${libraryView === 'all' ? 'active' : ''}`}>
@@ -450,16 +462,26 @@ export default function App() {
               </button>
             </div>
             <span className="filter-divider" aria-hidden="true" />
-            <div className="filter-group" role="group" aria-label={text.categoryLabel}>
+            <button
+              type="button"
+              className={`category-pill category-toggle ${showMobileCategories ? 'active' : ''}`}
+              onClick={() => setShowMobileCategories(prev => !prev)}
+              aria-expanded={showMobileCategories}
+              aria-controls="category-filter-list"
+            >
+              <span>{text.categoryMenu}: {CATEGORIES_MAP[activeCategory]?.[lang] ?? activeCategory}</span>
+              <ChevronDown size={13} />
+            </button>
+            <div id="category-filter-list" className={`filter-group category-filter-group ${showMobileCategories ? 'is-expanded' : ''}`} role="group" aria-label={text.categoryLabel}>
               {CATEGORIES.map(category => (
-                <button key={category} onClick={() => setActiveCategory(category)} aria-pressed={activeCategory === category} className={`category-pill ${activeCategory === category ? 'active' : ''}`}>
+                <button key={category} onClick={() => { setActiveCategory(category); setShowMobileCategories(false); }} aria-pressed={activeCategory === category} className={`category-pill ${activeCategory === category ? 'active' : ''}`}>
                   {CATEGORIES_MAP[category]?.[lang] ?? category}
                 </button>
               ))}
             </div>
           </div>
 
-          <div style={{ position: 'relative', width: '100%', maxWidth: 300 }}>
+          <div className="search-box">
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input type="text" value={searchTerm} onChange={event => setSearchTerm(event.target.value)} placeholder={text.searchPlaceholder} className="search-input" />
             {searchTerm ? (
@@ -489,15 +511,16 @@ export default function App() {
           ) : (
             <div className="masonry-grid">
               {filteredGames.map(game => (
-                <div key={game.id} className="glass game-card masonry-item" style={{ borderRadius: 'var(--radius-md)', padding: 20, display: 'block' }}>
+                <div key={game.id} className="glass game-card masonry-item" style={{ '--game-accent': game.accentColor } as React.CSSProperties}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ background: `${game.accentColor}0a`, color: game.accentColor, fontSize: 10.5, fontWeight: 600, padding: '3px 8px', borderRadius: 3, border: `1px solid ${game.accentColor}15`, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                           {CATEGORIES_MAP[game.category]?.[lang] ?? (lang === 'en' ? game.categoryEn : game.category)}
                         </span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2.5 }} title={`${text.difficulty}: ${game.difficulty} / 5`}>
-                          {Array.from({ length: 5 }).map((_, i) => <span key={`${game.id}-${i}`} style={{ color: i < game.difficulty ? game.accentColor : 'var(--border-color)', opacity: i < game.difficulty ? 0.8 : 0.25, fontSize: 13 }}>•</span>)}
+                        <span className="difficulty-badge" style={{ color: game.accentColor }} title={`${text.difficulty}: ${game.difficulty} / 5`}>
+                          <span className="difficulty-mark" aria-hidden="true" />
+                          {getDifficultyLabel(game.difficulty)}
                         </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -515,19 +538,23 @@ export default function App() {
                       </div>
                     </div>
 
-                    <h3 style={{ fontSize: 17, color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.3, letterSpacing: '0.02em', marginBottom: 12 }}>{getGameDisplayTitle(game, lang)}</h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
+                    <div className="game-heading">
+                      <h3>{getGameDisplayTitle(game, lang)}</h3>
+                      {getGameOriginalTitle(game, lang) && <span>{getGameOriginalTitle(game, lang)}</span>}
+                    </div>
+                    <p className="game-description">
                       {lang === 'en' ? game.descriptionEn : lang === 'zh-TW' ? game.descriptionTraditional : game.description}
                     </p>
                   </div>
 
                   <div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 16, borderTop: '1px solid var(--border-color)', paddingTop: 12 }}>
-                      {game.tech.map(tech => <span key={tech} style={{ fontSize: 10, color: 'var(--text-secondary)', background: 'var(--bg-dark)', padding: '2px 8px', borderRadius: 4, border: '1px solid var(--border-color)', fontWeight: 500 }}>{tech}</span>)}
+                    <div className="tech-list">
+                      {game.tech.slice(0, 3).map(tech => <span key={tech}>{tech}</span>)}
+                      {game.tech.length > 3 && <span className="tech-more" title={game.tech.slice(3).join(', ')}>+{game.tech.length - 3}</span>}
                     </div>
 
                     {game.status === 'playable' ? (
-                      <button onClick={() => handlePlayGame(game)} style={{ width: '100%', borderRadius: 4, background: `${game.accentColor}12`, color: game.accentColor, border: 'none', padding: '10px 16px', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                      <button className="game-launch-btn" onClick={() => handlePlayGame(game)}>
                         <Play size={12} fill="currentColor" />
                         {text.playNow}
                       </button>
