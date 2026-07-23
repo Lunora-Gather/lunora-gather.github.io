@@ -9,7 +9,9 @@ import {
   Sun,
   Moon,
   Search,
-  Play
+  Play,
+  Heart,
+  History
 } from 'lucide-react';
 import {
   CATEGORIES,
@@ -22,6 +24,7 @@ import { CATEGORIES_MAP, LOCALIZED_TEXTS, type Lang, type LocalizedText } from '
 
 type Theme = 'dark' | 'light';
 type AchievementId = 'novice' | 'hardcore' | 'first-step' | 'collector';
+type LibraryView = 'all' | 'favorites' | 'recent';
 
 interface ZymLogoProps {
   size?: number;
@@ -38,8 +41,23 @@ const STORAGE_KEYS = {
   playedCount: 'lunora_played_count',
   achievements: 'lunora_achievements',
   customPorts: 'lunora_custom_ports',
-  openInNewTab: 'lunora_open_in_new_tab'
+  openInNewTab: 'lunora_open_in_new_tab',
+  favorites: 'lunora_favorites',
+  recentGames: 'lunora_recent_games'
 } as const;
+
+const getStoredStringArray = (key: string): string[] => {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) ?? '[]');
+    const validGameIds = new Set(GAMES_DATA.map(game => game.id));
+    return Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === 'string' && validGameIds.has(item))
+      : [];
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
 
 const getInitialTheme = (): Theme => {
   const savedTheme = localStorage.getItem(STORAGE_KEYS.theme);
@@ -48,7 +66,8 @@ const getInitialTheme = (): Theme => {
 
 const getInitialLang = (): Lang => {
   const savedLang = localStorage.getItem(STORAGE_KEYS.lang);
-  return savedLang === 'en' ? 'en' : 'zh';
+  if (savedLang === 'en' || savedLang === 'zh-TW') return savedLang;
+  return 'zh-CN';
 };
 
 const getInitialEntryState = (): boolean => {
@@ -135,28 +154,60 @@ export default function App() {
   const [entryFadeOut, setEntryFadeOut] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<string>('全部');
+  const [libraryView, setLibraryView] = useState<LibraryView>('all');
+  const [favoriteGameIds, setFavoriteGameIds] = useState<string[]>(() => getStoredStringArray(STORAGE_KEYS.favorites));
+  const [recentGameIds, setRecentGameIds] = useState<string[]>(() => getStoredStringArray(STORAGE_KEYS.recentGames));
 
   const text = LOCALIZED_TEXTS[lang];
+
+  const lobbyTitle = libraryView === 'favorites'
+    ? text.favorites
+    : libraryView === 'recent'
+      ? text.recentGames
+      : activeCategory === '全部'
+        ? text.allWorks
+        : CATEGORIES_MAP[activeCategory]?.[lang] ?? activeCategory;
+
+  const hasActiveQueryFilter = searchTerm.trim() !== '' || activeCategory !== '全部';
+  const emptyMessage = hasActiveQueryFilter
+    ? text.noGamesFound
+    : libraryView === 'favorites'
+      ? text.noFavorites
+      : libraryView === 'recent'
+        ? text.noRecentGames
+        : text.noGamesFound;
 
   const filteredGames = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    return GAMES_DATA.filter(game => {
+    const games = GAMES_DATA.filter(game => {
       const matchesCategory = activeCategory === '全部' || game.category === activeCategory;
       const searchableText = [
         game.title,
         game.chineseTitle ?? '',
+        game.chineseTitleTraditional ?? '',
         game.category,
         game.categoryEn,
         game.description,
+        game.descriptionTraditional,
         game.descriptionEn,
         ...game.tech
       ].join(' ').toLowerCase();
       const matchesSearch = normalizedSearch === '' || searchableText.includes(normalizedSearch);
 
-      return matchesCategory && matchesSearch;
+      const matchesView = libraryView === 'all'
+        || (libraryView === 'favorites' && favoriteGameIds.includes(game.id))
+        || (libraryView === 'recent' && recentGameIds.includes(game.id));
+
+      return matchesCategory && matchesSearch && matchesView;
     });
-  }, [activeCategory, searchTerm]);
+
+    if (libraryView === 'recent') {
+      return games.sort((a, b) => recentGameIds.indexOf(a.id) - recentGameIds.indexOf(b.id));
+    }
+
+    return games;
+  }, [activeCategory, favoriteGameIds, libraryView, recentGameIds, searchTerm]);
 
   const triggerAchievement = (id: AchievementId) => {
     setUnlockedAchievements(prev => {
@@ -179,6 +230,12 @@ export default function App() {
   };
 
   const handlePlayGame = (game: Game) => {
+    setRecentGameIds(prev => {
+      const next = [game.id, ...prev.filter(id => id !== game.id)].slice(0, 6);
+      localStorage.setItem(STORAGE_KEYS.recentGames, JSON.stringify(next));
+      return next;
+    });
+
     setPlayedCount(prev => {
       const next = prev + 1;
       localStorage.setItem(STORAGE_KEYS.playedCount, next.toString());
@@ -196,6 +253,20 @@ export default function App() {
     }
 
     window.location.href = gameUrl;
+  };
+
+  const toggleFavorite = (gameId: string) => {
+    setFavoriteGameIds(prev => {
+      const next = prev.includes(gameId) ? prev.filter(id => id !== gameId) : [...prev, gameId];
+      localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const resetLibraryFilters = () => {
+    setSearchTerm('');
+    setActiveCategory('全部');
+    setLibraryView('all');
   };
 
   const handleEnter = () => {
@@ -225,6 +296,7 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.lang, lang);
+    document.documentElement.lang = lang;
   }, [lang]);
 
   useEffect(() => {
@@ -301,7 +373,7 @@ export default function App() {
             <span className="entry-kicker">Unified Indie Portal</span>
             <h1 className="entry-title">LUNORA</h1>
             <div className="entry-divider" />
-            <p className="entry-tagline">在灵感与现实的交界处，开启独立灵魂的游历。</p>
+            <p className="entry-tagline">{text.heroTagline}</p>
             <button className="entry-btn" onClick={handleEnter}>{text.enterBtn}</button>
           </div>
         </div>
@@ -317,14 +389,14 @@ export default function App() {
         </div>
       )}
 
-      <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 100, padding: '14px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', marginBottom: 32 }}>
+      <header className="glass app-header" style={{ position: 'sticky', top: 0, zIndex: 100, padding: '14px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', marginBottom: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <ZymLogo size={20} color="var(--text-primary)" />
           <h1 style={{ fontSize: 18, letterSpacing: '0.12em', color: 'var(--text-primary)' }}>LUNORA</h1>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div className="glass" style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-secondary)', padding: '5px 12px', borderRadius: 20, alignItems: 'center', background: 'var(--bg-dark)', border: '1px solid var(--border-color)' }}>
+        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div className="glass header-stats" style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-secondary)', padding: '5px 12px', borderRadius: 20, alignItems: 'center', background: 'var(--bg-dark)', border: '1px solid var(--border-color)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} title={text.statsDuration}>
               <Clock size={12} style={{ color: 'var(--primary)' }} />
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 500 }}>{formatTime(playTime)}</span>
@@ -341,7 +413,7 @@ export default function App() {
             </div>
           </div>
 
-          <button onClick={toggleTheme} className="btn btn-secondary" style={{ padding: '6px 10px', borderRadius: 4, display: 'flex' }} title={theme === 'dark' ? 'Light' : 'Dark'}>
+          <button onClick={toggleTheme} className="btn btn-secondary" style={{ padding: '6px 10px', borderRadius: 4, display: 'flex' }} aria-label={theme === 'dark' ? text.switchToLight : text.switchToDark} title={theme === 'dark' ? text.switchToLight : text.switchToDark}>
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
           <button onClick={() => setShowSettings(prev => !prev)} className="btn btn-secondary" style={{ padding: '6px 10px', borderRadius: 4 }} title={text.settingsTitle}>
@@ -354,7 +426,7 @@ export default function App() {
         <section className="glass hero-card" style={{ padding: '36px 44px', borderRadius: 'var(--radius-lg)', marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20, position: 'relative', overflow: 'hidden' }}>
           <div>
             <h2 className="hero-title" style={{ fontSize: 28, letterSpacing: '0.15em', margin: 0 }}>LUNORA</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 8, letterSpacing: '0.04em', lineHeight: 1.7, maxWidth: 600 }}>在灵感与现实的交界处，开启独立灵魂的游历。</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 8, letterSpacing: '0.04em', lineHeight: 1.7, maxWidth: 600 }}>{text.heroTagline}</p>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <a href="#games-lobby" className="btn btn-primary">{text.browseLobbyBtn}</a>
@@ -363,19 +435,35 @@ export default function App() {
         </section>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 28 }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {CATEGORIES.map(category => (
-              <button key={category} onClick={() => setActiveCategory(category)} className={`category-pill ${activeCategory === category ? 'active' : ''}`}>
-                {CATEGORIES_MAP[category]?.[lang] ?? category}
+          <div className="filter-groups">
+            <div className="filter-group" role="group" aria-label={text.libraryViewLabel}>
+              <button onClick={() => setLibraryView('all')} aria-pressed={libraryView === 'all'} className={`category-pill ${libraryView === 'all' ? 'active' : ''}`}>
+                {text.libraryAll}
               </button>
-            ))}
+              <button onClick={() => setLibraryView('favorites')} aria-pressed={libraryView === 'favorites'} className={`category-pill category-pill-icon ${libraryView === 'favorites' ? 'active' : ''}`}>
+                <Heart size={12} fill={libraryView === 'favorites' ? 'currentColor' : 'none'} />
+                {text.favorites} <span className="pill-count">{favoriteGameIds.length}</span>
+              </button>
+              <button onClick={() => setLibraryView('recent')} aria-pressed={libraryView === 'recent'} className={`category-pill category-pill-icon ${libraryView === 'recent' ? 'active' : ''}`}>
+                <History size={12} />
+                {text.recentGames} <span className="pill-count">{recentGameIds.length}</span>
+              </button>
+            </div>
+            <span className="filter-divider" aria-hidden="true" />
+            <div className="filter-group" role="group" aria-label={text.categoryLabel}>
+              {CATEGORIES.map(category => (
+                <button key={category} onClick={() => setActiveCategory(category)} aria-pressed={activeCategory === category} className={`category-pill ${activeCategory === category ? 'active' : ''}`}>
+                  {CATEGORIES_MAP[category]?.[lang] ?? category}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div style={{ position: 'relative', width: '100%', maxWidth: 300 }}>
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input type="text" value={searchTerm} onChange={event => setSearchTerm(event.target.value)} placeholder={text.searchPlaceholder} className="search-input" />
             {searchTerm ? (
-              <button onClick={() => setSearchTerm('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 0 }}>
+              <button onClick={() => setSearchTerm('')} aria-label={text.clearSearch} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 0 }}>
                 <X size={14} />
               </button>
             ) : <span className="search-shortcut">/</span>}
@@ -386,7 +474,7 @@ export default function App() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <h2 style={{ fontSize: 16, color: 'var(--text-primary)', fontWeight: 600, letterSpacing: '0.02em' }}>
-                {activeCategory === '全部' ? text.allWorks : CATEGORIES_MAP[activeCategory]?.[lang] ?? activeCategory}
+                {lobbyTitle}
               </h2>
               {isDevMode && <span className="dev-badge">DEV</span>}
             </div>
@@ -395,8 +483,8 @@ export default function App() {
 
           {filteredGames.length === 0 ? (
             <div className="glass" style={{ padding: '64px 24px', borderRadius: 'var(--radius-md)', textAlign: 'center', color: 'var(--text-secondary)' }}>
-              <p style={{ fontSize: 14 }}>{text.noGamesFound}</p>
-              <button onClick={() => { setSearchTerm(''); setActiveCategory('全部'); }} className="btn btn-secondary" style={{ marginTop: 16, fontSize: 12.5, padding: '6px 12px', borderRadius: 4 }}>{text.resetFilters}</button>
+              <p style={{ fontSize: 14 }}>{emptyMessage}</p>
+              <button onClick={resetLibraryFilters} className="btn btn-secondary" style={{ marginTop: 16, fontSize: 12.5, padding: '6px 12px', borderRadius: 4 }}>{text.resetFilters}</button>
             </div>
           ) : (
             <div className="masonry-grid">
@@ -406,17 +494,31 @@ export default function App() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ background: `${game.accentColor}0a`, color: game.accentColor, fontSize: 10.5, fontWeight: 600, padding: '3px 8px', borderRadius: 3, border: `1px solid ${game.accentColor}15`, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                          {lang === 'zh' ? game.category : game.categoryEn}
+                          {CATEGORIES_MAP[game.category]?.[lang] ?? (lang === 'en' ? game.categoryEn : game.category)}
                         </span>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2.5 }} title={`${text.difficulty}: ${game.difficulty} / 5`}>
                           {Array.from({ length: 5 }).map((_, i) => <span key={`${game.id}-${i}`} style={{ color: i < game.difficulty ? game.accentColor : 'var(--border-color)', opacity: i < game.difficulty ? 0.8 : 0.25, fontSize: 13 }}>•</span>)}
                         </span>
                       </div>
-                      {game.status === 'coming-soon' && <span style={{ background: 'var(--bg-dark)', color: 'var(--text-muted)', fontSize: 10.5, fontWeight: 600, padding: '3px 8px', borderRadius: 3, border: '1px solid var(--border-color)' }}>{text.inDevelopment}</span>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {game.status === 'coming-soon' && <span style={{ background: 'var(--bg-dark)', color: 'var(--text-muted)', fontSize: 10.5, fontWeight: 600, padding: '3px 8px', borderRadius: 3, border: '1px solid var(--border-color)' }}>{text.inDevelopment}</span>}
+                        <button
+                          type="button"
+                          className={`favorite-btn ${favoriteGameIds.includes(game.id) ? 'is-favorite' : ''}`}
+                          onClick={() => toggleFavorite(game.id)}
+                          aria-pressed={favoriteGameIds.includes(game.id)}
+                          aria-label={favoriteGameIds.includes(game.id) ? text.removeFavorite : text.addFavorite}
+                          title={favoriteGameIds.includes(game.id) ? text.removeFavorite : text.addFavorite}
+                        >
+                          <Heart size={14} fill={favoriteGameIds.includes(game.id) ? 'currentColor' : 'none'} />
+                        </button>
+                      </div>
                     </div>
 
-                    <h3 style={{ fontSize: 17, color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.3, letterSpacing: '0.02em', marginBottom: 12 }}>{getGameDisplayTitle(game)}</h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>{lang === 'zh' ? game.description : game.descriptionEn}</p>
+                    <h3 style={{ fontSize: 17, color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.3, letterSpacing: '0.02em', marginBottom: 12 }}>{getGameDisplayTitle(game, lang)}</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
+                      {lang === 'en' ? game.descriptionEn : lang === 'zh-TW' ? game.descriptionTraditional : game.description}
+                    </p>
                   </div>
 
                   <div>
@@ -441,24 +543,25 @@ export default function App() {
       </main>
 
       {showSettings && (
-        <div className="glass" style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100vh', zIndex: 500, boxShadow: 'var(--settings-shadow)', padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', animation: 'slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+        <aside className="glass" role="dialog" aria-modal="false" aria-label={text.settingsTitle} style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100vh', zIndex: 500, boxShadow: 'var(--settings-shadow)', padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', animation: 'slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h3 style={{ color: 'var(--text-primary)', fontSize: 16, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}><Settings size={16} /> {text.settingsTitle}</h3>
-              <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}><X size={16} /></button>
+              <button onClick={() => setShowSettings(false)} aria-label={text.closeSettings} title={text.closeSettings} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}><X size={16} /></button>
             </div>
 
             <SettingBlock label={text.langSelect}>
-              <button onClick={() => setLang('zh')} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 11.5, background: lang === 'zh' ? 'var(--primary)' : undefined, color: lang === 'zh' ? '#fff' : undefined }}>中文</button>
+              <button onClick={() => setLang('zh-CN')} className="btn btn-secondary" style={{ padding: '4px 9px', fontSize: 11.5, background: lang === 'zh-CN' ? 'var(--primary)' : undefined, color: lang === 'zh-CN' ? '#fff' : undefined }}>简中</button>
+              <button onClick={() => setLang('zh-TW')} className="btn btn-secondary" style={{ padding: '4px 9px', fontSize: 11.5, background: lang === 'zh-TW' ? 'var(--primary)' : undefined, color: lang === 'zh-TW' ? '#fff' : undefined }}>繁中</button>
               <button onClick={() => setLang('en')} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 11.5, background: lang === 'en' ? 'var(--primary)' : undefined, color: lang === 'en' ? '#fff' : undefined }}>EN</button>
             </SettingBlock>
 
             <SettingBlock label={text.devMode}>
-              <input type="checkbox" checked={isDevMode} onChange={event => setIsDevMode(event.target.checked)} />
+              <input type="checkbox" aria-label={text.devMode} checked={isDevMode} onChange={event => setIsDevMode(event.target.checked)} />
             </SettingBlock>
 
             <SettingBlock label={text.openInNewTab}>
-              <input type="checkbox" checked={openInNewTab} onChange={event => setOpenInNewTab(event.target.checked)} />
+              <input type="checkbox" aria-label={text.openInNewTab} checked={openInNewTab} onChange={event => setOpenInNewTab(event.target.checked)} />
             </SettingBlock>
 
             {isDevMode && (
@@ -467,7 +570,7 @@ export default function App() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {GAMES_DATA.filter(game => game.status === 'playable').map(game => (
                     <div key={game.id} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                      <label style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{getGameDisplayTitle(game)}</label>
+                      <label style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{getGameDisplayTitle(game, lang)}</label>
                       <input type="text" value={customPorts[game.id] ?? game.devUrl} onChange={event => handlePortChange(game.id, event.target.value)} style={{ background: 'var(--bg-dark)', border: '1px solid var(--border-color)', borderRadius: 4, color: 'var(--text-primary)', padding: '4px 8px', fontSize: 12, outline: 'none' }} />
                     </div>
                   ))}
@@ -479,7 +582,7 @@ export default function App() {
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}><Info size={12} /><span>Org: Lunora-Gather</span></div>
           </div>
-        </div>
+        </aside>
       )}
 
       <style>{`
